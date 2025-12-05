@@ -5,7 +5,7 @@
 ```bash
 sudo apt update
 sudo apt install -y build-essential python3 python3-pip python3-venv make git
-sudo apt install -y python3-psutil python3-pandas python3-matplotlib
+sudo apt install -y python3-psutil python3-pandas python3-matplotlib plotly=="5.24.1" kaleido
 ```
 
 ## 2. Générer le projet (si ce n'est pas déjà fait)
