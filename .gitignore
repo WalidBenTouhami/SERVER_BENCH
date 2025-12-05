@@ -1,0 +1,23 @@
+# Python venv
+python/venv/
+__pycache__/
+*.pyc
+
+# Binaires C
+serveur_mono
+serveur_multi
+test_queue
+
+# Résultats benchmark
+python/results.json
+python/results.xlsx
+python/figures/
+
+# Logs
+logs/
+
+# LaTeX
+docs/*.aux
+docs/*.log
+docs/*.toc
+docs/*.out
