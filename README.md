@@ -1,253 +1,242 @@
----
+# 🚀 Serveur TCP & HTTP — Mono-thread / Multi-thread (C/POSIX)
+### Projet Ingénieur — Serveur Hautes Performances + Queue FIFO Générique + Benchmarks Automatisés
 
-# ✅ **README.md**
+Ce projet implémente plusieurs serveurs réseau en **C/POSIX**, comparant les architectures :
+- **TCP mono-thread** (`serveur_mono`)
+- **TCP multi-thread** (`serveur_multi`)
+- **HTTP mono-thread** (`serveur_mono_http`)
+- **HTTP multi-thread avec pool de threads** (`serveur_multi_http`)
 
----
-
-# 🖥️ **Serveur TCP Mono-thread vs Multi-thread en C (Projet Systèmes d’Exploitation Avancés)**
-
-**Auteur : Walid Ben Touhami**
-**Technologies : C11 · POSIX Threads · Python3 · Linux Ubuntu 24.04 · GitHub CI/CD**
-
----
-
-## 📌 **Résumé du projet**
-
-Ce projet met en œuvre et compare **deux architectures complètes de serveurs TCP** en C :
-
-* ✔ **serveur_mono** → modèle séquentiel, mono-thread
-* ✔ **serveur_multi** → modèle concurrent basé sur :
-
-  * un **thread acceptor**
-  * un **pool fixe de 8 workers**
-  * une **queue FIFO thread-safe** (mutex + condition variables)
-
-Chaque requête simule un **traitement intensif** :
-→ 100 000 calculs `sqrt()` + délai aléatoire 10–100 ms.
-Cela permet d'obtenir une comparaison **réaliste** mono vs multi-thread.
-
-Le projet inclut également :
-
-* un **client de stress Python**
-* un **benchmark complet** (latence, throughput, CPU, RAM)
-* des **graphiques d’analyse**
-* une **CI/CD GitHub Actions**
-* un **générateur automatique de slides PowerPoint**
-* un **rapport LaTeX** pour soutenance
-
-Ce projet constitue un cas d’étude complet en **programmation système, threading, performance et architecture logicielle**.
+Il inclut :
+- une **file FIFO générique thread-safe** (queue.c)
+- des **tests unitaires C**
+- un **client de stress** Python capable de monter à plusieurs centaines de connexions
+- un système de **benchmarks automatisés**
+- un **dashboard HTML interactif** (Plotly)
+- des **scripts DevOps** : build, test, bench, monitoring
+- un **système de reconstruction automatique du projet** (`rebuild_project.py`)
 
 ---
 
-## 📂 **Structure du projet**
+# 📂 Arborescence du projet
 
-```
 server_project/
-│
 ├── src/
-│   ├── serveur_mono.c
-│   ├── serveur_multi.c
-│   ├── queue.c
-│   └── queue.h
+│ ├── serveur_mono.c
+│ ├── serveur_multi.c
+│ ├── serveur_mono_http.c
+│ ├── serveur_multi_http.c
+│ ├── queue.c / queue.h
+│ ├── http.c / http.h
 │
 ├── tests/
-│   └── test_queue.c         # tests unitaires FIFO
+│ └── test_queue.c
 │
-├── benchmark/
-│   ├── client.py            # client de stress
-│   ├── benchmark.py         # benchmark global
-│   └── plot_results.py      # graphiques
+├── python/
+│ ├── client_stress.py
+│ ├── benchmark.py
+│ ├── export_html.py
+│ ├── dashboard.html (généré)
+│
+├── scripts/
+│ ├── run_all.sh
+│ ├── monitor.sh
 │
 ├── docs/
-│   ├── rapport.tex
-│   └── diagrammes UML (optionnel)
+│ ├── rapport.tex
+│ ├── rapport.pdf (généré)
 │
-├── generate_ppt.py          # génération automatique PPTX
-├── Makefile                 # build Pro (debug, test, sanitizer, run…)
-├── INSTALL.md               # installation & exécution
-└── README.md                # ce fichier
-```
+├── Makefile
+├── rebuild_project.py
+├── create_http_files.py
+├── results.json / results.xlsx (générés)
+└── README.md
+
+markdown
+Copier le code
 
 ---
 
-# 🚀 **Compilation & exécution**
+# 🧩 Fonctionnalités principales
 
-## 🔧 **Compilation standard**
+## 1. ⭐ Serveur TCP Mono-thread
+- Un seul thread gère toutes les connexions.
+- Architecture séquentielle simple.
 
-```
-make
-```
+## 2. 🔥 Serveur TCP Multi-thread
+- Pool fixe de threads.
+- File d’attente FIFO générique thread-safe.
+- Scalabilité testée jusqu’à 300 clients concurrents.
 
-## 🧹 Nettoyage
+## 3. 🌐 Serveurs HTTP
+### Mono-thread
+- Réponses HTML & JSON.
+- Parseur HTTP robuste (`parse_http_request`).
 
-```
-make clean
-```
+### Multi-thread
+- Thread pool (8 workers par défaut).
+- HTTP 1.1 minimal sans frameworks.
+- Routes :
+  - `/` → page HTML
+  - `/hello` → JSON
+  - Autres → 404
 
-## 🐛 Mode debug (ASan + UBSan)
-
-```
-make debug
-```
-
----
-
-# ▶️ **Exécution des serveurs**
-
-## Mono-thread
-
-```
-make run_mono
-```
-
-Disponible sur **port 5050**.
-
-## Multi-thread
-
-```
-make run_multi
-```
-
-Disponible sur **port 5051**.
-
-## Arrêt des serveurs
-
-```
-make kill_servers
-```
+## 4. 📊 Benchmarks & Monitoring (Python)
+- Latence moyenne / médiane / p95 / p99
+- Débit (requests per second)
+- Taux d’erreurs
+- Utilisation CPU & RAM du serveur
+- Export vers :
+  - `results.json`
+  - `results.xlsx`
+  - Dashboard HTML : `python/dashboard.html`
 
 ---
 
-# 🧪 **Tests unitaires**
+# 🧪 Tests unitaires C
 
-```
+Lancement :
+
+```bash
 make test
-```
+Testé :
 
-Teste entièrement la **file FIFO thread-safe** (mutex + cond + shutdown).
+intégrité de la queue FIFO
 
-Sortie typique :
+comportement multi-producteurs / multi-consommateurs
 
-```
-[TEST] consumer received 1000 items
-[TEST] test_queue terminé.
-```
+🛠️ Compilation
+Compilation complète :
 
----
+bash
+Copier le code
+make clean
+make -j$(nproc)
+Exécution rapide :
 
-# 📊 **Benchmark complet (Python)**
+bash
+Copier le code
+make run_mono
+make run_multi
+make run_mono_http
+make run_multi_http
+Arrêt des serveurs :
 
-Le benchmark exécute :
+bash
+Copier le code
+make kill_servers
+📦 Reconstruction complète automatique
+bash
+Copier le code
+python3 rebuild_project.py
+Ce script :
 
-* 10, 50, 100, 200, 300 clients simultanés
-* Mesure :
+régénère les fichiers HTTP
 
-  * latence moyenne
-  * P95, P99
-  * throughput (req/s)
-  * CPU total & par cœur (psutil)
-  * consommation mémoire (RSS)
-* Export :
+nettoie le projet
 
-  * JSON
-  * Excel
-* Génère 6 graphiques :
+recompile
 
-  * débit vs charge
-  * latence P99 vs clients
-  * heatmap CPU
-  * consommation mémoire
-  * speedup multi-thread
-  * saturation des workers
+lance les tests
 
-### Exécution :
+vérifie l’intégrité du projet
 
-```
-python3 benchmark/benchmark.py
-```
+🚀 Pipeline complet (build + bench + plots)
+bash
+Copier le code
+./scripts/run_all.sh
+Étapes :
 
----
+compilation C
 
-# 📑 **Rapport LaTeX (soutenance)**
+installation env Python
 
-Le dossier `docs/` contient :
+exécution du benchmark
 
-* un rapport `.tex` complet (plan 5–7 pages)
-* sections "architecture", "analyse des résultats", "limites", "perspectives"
-* espaces réservés pour les graphiques produits par le benchmark
+export JSON/XLSX
 
-Compilation :
+génération du panel HTML
 
-```
-cd docs
-pdflatex rapport.tex
-```
+📈 Dashboard interactif
+Génération :
 
----
+bash
+Copier le code
+python3 python/export_html.py
+Ouverture :
 
-# 🎞️ **Présentation PowerPoint (générée automatiquement)**
+bash
+Copier le code
+xdg-open python/dashboard.html
+Contenu :
 
-Le script Python génère un **PPTX académique 16:9 complet** :
+courbes latence vs clients
 
-```
-python3 generate_ppt.py
-```
+courbes throughput
 
-Sortie :
+CPU/RAM sampling
 
-```
-presentation_server_project.pptx
-```
+comparatif mono vs multi
 
----
+🧠 Architecture technique & Conception
+Queue FIFO Générique
+basée sur tableau circulaire
 
-# 🧠 **Architecture conceptuelle**
+verrouillage via mutex + condition variables
 
-### **Mono-thread**
+supporte tout type (void *)
 
-```
-while (1) {
-    client = accept();
-    traiter(client);
-}
-```
+utilisée par le serveur multi HTTP
 
-→ Simple mais saturé dès ~10 connexions.
+Pool de threads
+modèle "worker permanent"
 
-### **Multi-thread**
+réduction drastique du coût d’allocation de threads
 
-```
-acceptor → queue → workers (×8)
-```
+bien plus performant sur forte charge
 
-→ Scalabilité, réduction du temps de réponse, meilleure utilisation CPU.
+Analyse des performances
+Multi-thread HTTP > Mono-thread TCP
 
----
+Multi TCP > Mono TCP (comme prévu)
 
-# 📈 **Résultats attendus**
+🔒 Sécurité et robustesse
+serveurs isolés via fork? ou threads → sécurisé
 
-* Le multi-thread devient **4× à 7× plus rapide**
-* Le mono-thread sature rapidement
-* Le speedup augmente proportionnellement au nombre de workers
-* Le contexte fixe du pool évite l’overhead de création de threads
+sanitizers disponibles :
 
----
+bash
+Copier le code
+make debug
+reconstruction auto en cas d’erreur
 
-# 🔮 **Perspectives d’évolution**
+monitoring CPU/RAM intégré
 
-* Passage à **epoll** + threads hybrides
-* Version **multi-processus** avec `fork()` + mémoire partagée
-* Implémentation **lock-free MPMC**
-* Intégration Docker & Kubernetes
-* Monitoring Prometheus + Grafana
+scripts résilients (run_all.sh bulletproof)
 
----
+📝 Rapport académique
+Disponible dans :
 
-# 📜 Licence
+bash
+Copier le code
+docs/rapport.tex
+docs/rapport.pdf
+Inclut :
 
-Projet académique — diffusion et réutilisation autorisées dans un cadre pédagogique.
+contexte
 
----
+analyse d’architecture
 
+résultats graphiques
 
+interprétation
 
+conclusion professionnelle
+
+🤝 Auteur
+Walid Ben Touhami
+Projet Système & Réseaux — Ingénieur Informatique
+Serveurs C hautes performances / Benchmarking / DevOps
+
+📄 Licence
+MIT — libre d’usage académique et professionnel.
