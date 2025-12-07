@@ -1,58 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOG_DIR="$ROOT/logs"
-PY_DIR="$ROOT/python"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PY_DIR="${PROJECT_ROOT}/python"
+LOG_DIR="${PROJECT_ROOT}/logs"
+LOG_FILE="${LOG_DIR}/auto_run.log"
 
 mkdir -p "$LOG_DIR"
 
-exec > >(tee -a "$LOG_DIR/auto_run.log") 2>&1
+timestamp() { date +"%Y-%m-%d %H:%M:%S"; }
+log() { echo "[$(timestamp)] $*" | tee -a "$LOG_FILE"; }
 
-GREEN="\033[1;32m"
-BLUE="\033[1;34m"
-YELLOW="\033[1;33m"
-RED="\033[1;31m"
-RESET="\033[0m"
+echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
+echo "🚀 Pipeline complet (build + bench + plots)"     | tee -a "$LOG_FILE"
+echo "Racine : ${PROJECT_ROOT}"                         | tee -a "$LOG_FILE"
+echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
 
-echo "──────────────────────────────────────────────"
-echo -e "🚀 Pipeline complet – $(date)"
-echo "Racine du projet : $ROOT"
-echo "──────────────────────────────────────────────"
-
-# 1) Compilation C
-echo -e "${BLUE}🧱 Compilation des serveurs C…${RESET}"
-(cd "$ROOT" && make clean && make -j"$(nproc)")
-echo -e "${GREEN}✔ Compilation terminée.${RESET}"
-
-# 2) Environnement Python (dans python/)
-echo -e "${BLUE}📦 Environnement Python (python/venv)…${RESET}"
-cd "$PY_DIR"
-if [[ ! -d venv ]]; then
-  python3 -m venv venv
+# venv global
+if [[ -d "${PROJECT_ROOT}/venv" ]]; then
+    log "🐍 Activation du venv global…"
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/venv/bin/activate"
+else
+    log "❌ venv introuvable. Lance ./setup.sh en premier."
+    exit 1
 fi
-# shellcheck disable=SC1091
-source venv/bin/activate
-pip install --upgrade pip >/dev/null
-pip install -r requirements.txt >/dev/null
-echo -e "${GREEN}✔ Environnement Python prêt.${RESET}"
 
-# 3) Benchmark
-echo -e "${BLUE}🔥 Exécution du benchmark complet…${RESET}"
-python3 benchmark.py
-echo -e "${GREEN}✔ Benchmark terminé.${RESET}"
+log "🧱 Compilation C…"
+(
+    cd "$PROJECT_ROOT"
+    make clean
+    make -j
+)
 
-# 4) Graphiques
-echo -e "${BLUE}📈 Génération des graphiques PNG + SVG…${RESET}"
-python3 plot_results.py
-echo -e "${GREEN}✔ Graphiques générés dans python/figures/.${RESET}"
+log "🔥 Exécution du benchmark Python…"
+(
+    cd "$PY_DIR"
+    python3 benchmark.py
+    python3 plot_results.py
+    python3 export_html.py
+)
 
-# 5) Dashboard HTML
-echo -e "${BLUE}🧩 Génération du dashboard HTML…${RESET}"
-python3 export_html.py
-echo -e "${GREEN}✔ Dashboard : python/dashboard.html${RESET}"
-
-echo "──────────────────────────────────────────────"
-echo -e "${GREEN}🎉 Pipeline complet terminé sans erreur.${RESET}"
-echo "──────────────────────────────────────────────"
+log "✔ Pipeline terminé. Résultats dans python/results.* et python/figures/."
 

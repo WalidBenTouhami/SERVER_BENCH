@@ -1,58 +1,44 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-LOG_FILE="logs/dashboard_open.log"
-DASHBOARD_PATH="$(realpath "$(dirname "$0")/../python/dashboard.html")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PY_DIR="${PROJECT_ROOT}/python"
+DASHBOARD="${PY_DIR}/dashboard.html"
+RESULTS_JSON="${PY_DIR}/results.json"
+LOG_DIR="${PROJECT_ROOT}/logs"
+LOG_FILE="${LOG_DIR}/dashboard_open.log"
 
-echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
-echo "🌐 Ouverture du Dashboard – $(date)"              | tee -a "$LOG_FILE"
-echo "📄 Fichier : $DASHBOARD_PATH"                    | tee -a "$LOG_FILE"
-echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
+mkdir -p "$LOG_DIR"
 
-# Vérification du fichier
-if [[ ! -f "$DASHBOARD_PATH" ]]; then
-    echo "❌ ERREUR : dashboard.html introuvable !" | tee -a "$LOG_FILE"
+timestamp() { date +"%Y-%m-%d %H:%M:%S"; }
+log() { echo "[$(timestamp)] $*" | tee -a "$LOG_FILE"; }
+
+echo "──────────────────────────────────────"
+echo "🖥 Ouverture Dashboard"
+echo "──────────────────────────────────────"
+
+# venv global
+if [[ -d "${PROJECT_ROOT}/venv" ]]; then
+    log "🐍 Activation du venv global…"
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/venv/bin/activate"
+else
+    log "❌ venv introuvable. Lance ./setup.sh."
     exit 1
 fi
 
-# Détection automatique du navigateur
-detect_browser() {
-    if command -v firefox >/dev/null 2>&1; then
-        echo "firefox"
-    elif command -v google-chrome >/dev/null 2>&1; then
-        echo "google-chrome"
-    elif command -v chromium >/dev/null 2>&1; then
-        echo "chromium"
-    elif command -v xdg-open >/dev/null 2>&1; then
-        echo "xdg-open"
-    else
-        echo "none"
-    fi
-}
-
-BROWSER=$(detect_browser)
-
-echo "🔍 Navigateur détecté : $BROWSER" | tee -a "$LOG_FILE"
-
-if [[ "$BROWSER" == "none" ]]; then
-    echo "⚠️ Aucun navigateur GUI détecté. Tentative en mode terminal…" | tee -a "$LOG_FILE"
-
-    if command -v lynx >/dev/null 2>&1; then
-        echo "📟 Ouverture avec lynx (mode terminal)…" | tee -a "$LOG_FILE"
-        lynx "$DASHBOARD_PATH"
-        exit 0
-    fi
-
-    echo "❌ ERREUR FATALE : aucun navigateur disponible, même pas lynx." | tee -a "$LOG_FILE"
-    echo "💡 Solution : installer un navigateur, ex. : sudo apt install firefox" | tee -a "$LOG_FILE"
+if [[ ! -f "$RESULTS_JSON" ]]; then
+    log "❌ python/results.json introuvable. Lance d'abord ./scripts/run_all.sh."
     exit 1
 fi
 
-# Lance le dashboard
-echo "🚀 Ouverture du Dashboard avec : $BROWSER" | tee -a "$LOG_FILE"
+if [[ ! -f "$DASHBOARD" ]]; then
+    log "ℹ Dashboard absent — génération via export_html.py"
+    (cd "$PY_DIR" && python3 export_html.py)
+fi
 
-"$BROWSER" "$DASHBOARD_PATH" >/dev/null 2>&1 &
-
-echo "✔ Dashboard lancé avec succès !" | tee -a "$LOG_FILE"
-echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
+log "🖥 Ouverture : $DASHBOARD"
+xdg-open "$DASHBOARD" >/dev/null 2>&1 || \
+    log "⚠ Impossible d'ouvrir automatiquement. Fichier : $DASHBOARD"
 

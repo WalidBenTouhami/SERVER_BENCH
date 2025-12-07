@@ -1,58 +1,43 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include "http.h"
 
-#define PORT 5050
+#define HTTP_PORT 8080
+#define BACKLOG   32
 
 int main(void) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        perror("socket");
-        return EXIT_FAILURE;
-    }
+    if (server_fd < 0) { perror("socket"); exit(1); }
 
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-    }
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
+    struct sockaddr_in addr = {0};
     addr.sin_family      = AF_INET;
-    addr.sin_port        = htons(PORT);
+    addr.sin_port        = htons(HTTP_PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        perror("bind");
-        close(server_fd);
-        return EXIT_FAILURE;
+        perror("bind"); exit(1);
+    }
+    if (listen(server_fd, BACKLOG) < 0) {
+        perror("listen"); exit(1);
     }
 
-    if (listen(server_fd, 10) < 0) {
-        perror("listen");
-        close(server_fd);
-        return EXIT_FAILURE;
-    }
-
-    printf("Serveur HTTP mono-thread sur port %d...\n", PORT);
-
-    char buffer[4096];
+    printf("[HTTP-MONO] Serveur HTTP mono-thread sur port %d\n", HTTP_PORT);
 
     for (;;) {
-        int client_fd = accept(server_fd, NULL, NULL);
-        if (client_fd < 0) {
-            perror("accept");
-            continue;
-        }
+        int client = accept(server_fd, NULL, NULL);
+        if (client < 0) { perror("accept"); continue; }
 
-        int n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-        if (n <= 0) {
-            close(client_fd);
-            continue;
-        }
+        char buffer[4096];
+        ssize_t n = recv(client, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) { close(client); continue; }
+
         buffer[n] = '\0';
 
         char method[16] = {0};
@@ -60,17 +45,21 @@ int main(void) {
         char query[256] = {0};
 
         parse_http_request(buffer, method, path, query);
-        printf("→ METHOD=%s | PATH=%s | QUERY=%s\n", method, path, query);
+        printf("[MONO_HTTP] METHOD='%s' | PATH='%s'\n", method, path);
 
         if (strcmp(path, "/hello") == 0) {
-            send_http_response(client_fd, "200 OK", "application/json",
-                               "{\"msg\":\"Bonjour depuis mono-thread\"}");
+            send_http_response(client,
+                               "200 OK",
+                               "application/json",
+                               "{\"msg\":\"Bonjour depuis serveur mono-thread\"}");
         } else {
-            send_http_response(client_fd, "404 Not Found", "text/plain",
+            send_http_response(client,
+                               "404 Not Found",
+                               "text/plain",
                                "404 NOT FOUND");
         }
 
-        close(client_fd);
+        close(client);
     }
 
     return 0;

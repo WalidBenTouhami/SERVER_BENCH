@@ -1,128 +1,123 @@
-from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-OUTPUT_DIR = "presentation"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+from pathlib import Path
 
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "presentation_finale_serveur.pptx")
+try:
+    from pptx import Presentation
+except ImportError:
+    raise SystemExit(
+        "❌ Le module python-pptx est manquant.\n"
+        "   Installe-le dans le venv : pip install python-pptx"
+    )
 
-prs = Presentation()
-TITLE_FONT = Pt(38)
-TEXT_FONT = Pt(22)
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = ROOT / "presentation"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# -----------------------------------------------------
-# Helper : ajout slide titre
-# -----------------------------------------------------
-def add_title_slide(title, subtitle=""):
-    slide_layout = prs.slide_layouts[0]  # Title slide
+OUTPUT_FILE = OUTPUT_DIR / "presentation_finale_serveur.pptx"
+
+
+def add_title_slide(prs: Presentation, title: str, subtitle: str = ""):
+    slide_layout = prs.slide_layouts[0]
     slide = prs.slides.add_slide(slide_layout)
     slide.shapes.title.text = title
-    slide.placeholders[1].text = subtitle
+    if subtitle:
+        slide.placeholders[1].text = subtitle
 
 
-# -----------------------------------------------------
-# Helper : slide texte simple
-# -----------------------------------------------------
-def add_bullet_slide(title, bullets):
+def add_bullet_slide(prs: Presentation, title: str, bullets):
     slide_layout = prs.slide_layouts[1]
     slide = prs.slides.add_slide(slide_layout)
     slide.shapes.title.text = title
-
     body = slide.placeholders[1].text_frame
+    body.clear()
     for b in bullets:
-        body.add_paragraph().text = b
+        p = body.add_paragraph()
+        p.text = b
+        p.level = 0
 
 
-# -----------------------------------------------------
-# SLIDE 1 — Title
-# -----------------------------------------------------
-add_title_slide(
-    "Serveur Haute Performance – TCP & HTTP",
-    "Projet Ingénieur – Implémentation complète Multi-thread / Benchmarks"
-)
+def main() -> None:
+    prs = Presentation()
 
-# -----------------------------------------------------
-# SLIDE 2 — Plan
-# -----------------------------------------------------
-add_bullet_slide("Plan de la présentation", [
-    "1. Architecture globale du projet",
-    "2. Serveur TCP mono-thread – Yassine",
-    "3. Serveur HTTP mono-thread – Islem",
-    "4. Serveur Multi-thread haute performance – Walid",
-    "5. Serveur HTTP Multi-thread – Ghada",
-    "6. Benchmarks & Dashboard Python",
-    "7. Répartition finale des tâches du groupe"
-])
+    # Slide 1 — Titre
+    add_title_slide(
+        prs,
+        "Serveur Haute Performance – TCP & HTTP",
+        "Projet Ingénieur – Multi-threading, Queue FIFO, Benchmarks Python"
+    )
 
-# -----------------------------------------------------
-# SLIDES POUR CHAQUE MEMBRE
-# -----------------------------------------------------
-# Yassine
-add_bullet_slide("TCP Mono-thread (Yassine)", [
-    "Boucle accept → recv → send",
-    "Modèle séquentiel simple",
-    "Limites : blocage, faible scalabilité",
-    "Utilisé comme baseline pour le benchmark"
-])
+    # Slide 2 — Plan
+    add_bullet_slide(prs, "Plan de la présentation", [
+        "1. Architecture globale du projet",
+        "2. Serveur TCP mono-thread – Yassine",
+        "3. Serveur HTTP mono-thread – Islem",
+        "4. Serveur TCP Multi-thread – Walid",
+        "5. Serveur HTTP Multi-thread – Ghada",
+        "6. Benchmarks & Dashboard",
+        "7. Répartition des tâches et conclusion",
+    ])
 
-# Islem
-add_bullet_slide("HTTP Mono-thread (Islem)", [
-    "Parseur HTTP minimaliste",
-    "Routes : / et /hello",
-    "Réponses HTML et JSON",
-    "Démo du fonctionnement mono-thread"
-])
+    # Yassine
+    add_bullet_slide(prs, "TCP Mono-thread (Yassine)", [
+        "Boucle accept → recv → traitement → send.",
+        "Modèle séquentiel simple et pédagogique.",
+        "Faible scalabilité sous forte charge.",
+        "Référence de base pour la comparaison de performance.",
+    ])
 
-# Walid
-add_bullet_slide("Serveur Multi-thread (Walid)", [
-    "Thread Pool fixe",
-    "Queue FIFO générique thread-safe",
-    "Workers permanents",
-    "Optimisation haute charge (100–300 clients)"
-])
+    # Islem
+    add_bullet_slide(prs, "HTTP Mono-thread (Islem)", [
+        "Serveur HTTP minimaliste basé sur sockets TCP.",
+        "Parsing de la ligne de requête (méthode, chemin, query).",
+        "Routes simples : / et /hello.",
+        "Réponses HTML et JSON, HTTP/1.1.",
+    ])
 
-# Ghada
-add_bullet_slide("HTTP Multi-thread (Ghada)", [
-    "Routage HTTP avancé",
-    "JSON / HTML / 404",
-    "Amélioration du parsing",
-    "Scalabilité et gestion concurrente"
-])
+    # Walid
+    add_bullet_slide(prs, "TCP Multi-thread (Walid)", [
+        "Thread pool fixe de workers.",
+        "File FIFO générique thread-safe (queue.c).",
+        "Traitement concurrent de nombreuses connexions.",
+        "Optimisation de la latence et du débit (req/s).",
+    ])
 
-# -----------------------------------------------------
-# SLIDE UML
-# -----------------------------------------------------
-add_bullet_slide("Diagramme UML – Architecture serveur", [
-    "Classes : Server, Worker, Queue, Client",
-    "Relations : Worker → Queue → Server",
-    "File FIFO générique comme cœur du système"
-])
+    # Ghada
+    add_bullet_slide(prs, "HTTP Multi-thread (Ghada)", [
+        "Serveur HTTP concurrent basé sur la queue FIFO.",
+        "Routing simple : /, /hello, gestion 404.",
+        "Meilleure scalabilité pour de nombreux clients HTTP.",
+        "Intégration avec le reste de l’architecture C.",
+    ])
 
-# -----------------------------------------------------
-# SLIDE BENCHMARK
-# -----------------------------------------------------
-add_bullet_slide("Benchmarks Python – Résultats", [
-    "Latence moyenne, médiane, p95, p99",
-    "Débit (RPS)",
-    "CPU & RAM via psutil",
-    "Export JSON / XLSX / Dashboard HTML"
-])
+    # UML
+    add_bullet_slide(prs, "Diagramme UML – Architecture", [
+        "Composants principaux : Server, Worker, Queue, Client.",
+        "Séparation accept (dispatcher) / traitement (workers).",
+        "Queue FIFO comme cœur de la synchronisation.",
+    ])
 
-# -----------------------------------------------------
-# SLIDE RÉPARTITION DU GROUPE
-# -----------------------------------------------------
-add_bullet_slide("Répartition des tâches", [
-    "1️⃣ Walid – Serveur Multi-thread & optimisation",
-    "2️⃣ Yassine – Serveur TCP Mono-thread",
-    "3️⃣ Islem – HTTP Mono-thread",
-    "4️⃣ Ghada – HTTP Multi-thread & routage"
-])
+    # Benchmarks
+    add_bullet_slide(prs, "Benchmarks Python – Résultats", [
+        "Client de stress multi-thread (ThreadPoolExecutor).",
+        "Mesures : latence moyenne, médiane, P95, P99.",
+        "Débit (requêtes/seconde), CPU et mémoire via psutil.",
+        "Export JSON/XLSX + figures PNG/SVG + dashboard HTML.",
+    ])
 
-# -----------------------------------------------------
-# ENREGISTREMENT
-# -----------------------------------------------------
-prs.save(OUTPUT_FILE)
-print(f"✔ PPTX généré : {OUTPUT_FILE}")
+    # Répartition
+    add_bullet_slide(prs, "Répartition des tâches", [
+        "Walid – Serveur Multi-thread TCP + Benchmarks + DevOps.",
+        "Yassine – Serveur TCP Mono-thread.",
+        "Islem – Serveur HTTP Mono-thread.",
+        "Ghada – Serveur HTTP Multi-thread + routage.",
+    ])
+
+    prs.save(str(OUTPUT_FILE))
+    print(f"✔ PPTX généré : {OUTPUT_FILE}")
+
+
+if __name__ == "__main__":
+    main()
 

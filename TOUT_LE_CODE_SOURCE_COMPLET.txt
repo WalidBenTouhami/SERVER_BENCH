@@ -1,0 +1,3436 @@
+# PROJET COMPLET - TOUT LE CODE SOURCE
+# Généré le 07/12/2025 à 21:29:03
+# Nombre de fichiers inclus : 36
+# Chemin du projet : /home/xpert/server_project
+#================================================================================
+
+### FICHIER : CONTRIBUTING.md
+# ------------------------------------------------------------
+# Contribution
+
+- Compiler en mode debug avec `make debug` pour activer les sanitizers.
+- Lancer `./scripts/run_tests.sh` avant toute modification majeure.
+- Respecter le style C : indentation 4 espaces, vérification systématique des retours d'erreur.
+
+
+# ================================================================================
+
+### FICHIER : CV_PROJECT_SECTION.md
+# ------------------------------------------------------------
+Projet : Serveur TCP Haute Performance (C multi-thread + Python benchmark)
+
+- Développement de serveurs TCP mono-thread et multi-thread en C (POSIX).
+- File d'attente FIFO thread-safe bornée (mutex + variables de condition).
+- Pool de threads (workers) pour le traitement concurrent des connexions.
+- Client de stress Python (ThreadPoolExecutor) jusqu'à 300 connexions.
+- Benchmark automatisé : latence moyenne, médiane, P95, P99, débit (req/s), CPU, mémoire.
+- Génération de graphiques (matplotlib) et scripts DevOps (build, tests, run_all).
+- Rapport LaTeX structuré présentant architecture, résultats et analyse de performance.
+
+Stack : C (POSIX), sockets TCP/IP, pthreads, Python 3, psutil, pandas, matplotlib, Makefile, shell.
+
+
+# ================================================================================
+
+### FICHIER : Makefile
+# ------------------------------------------------------------
+###############################################################################
+#   MAKEFILE PRO – Serveurs TCP/HTTP (C/POSIX) + Queue FIFO
+#   Auteur : Walid Ben Touhami
+###############################################################################
+
+SRC_DIR   := src
+TEST_DIR  := tests
+BUILD_DIR := build
+BIN_DIR   := bin
+
+CC       := gcc
+CFLAGS   := -Wall -Wextra -O2 -pthread -I$(SRC_DIR)
+DBGFLAGS := -g -fsanitize=address,undefined -DDEBUG -I$(SRC_DIR)
+LDFLAGS  := -lm -pthread
+
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+OBJ       := $(SRC_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+
+TARGETS := \
+    $(BIN_DIR)/serveur_mono \
+    $(BIN_DIR)/serveur_multi \
+    $(BIN_DIR)/serveur_mono_http \
+    $(BIN_DIR)/serveur_multi_http \
+    $(BIN_DIR)/test_queue
+
+TEST_OBJ := $(TEST_DIR)/test_queue.o $(BUILD_DIR)/queue.o
+
+GREEN  := \033[1;32m
+BLUE   := \033[1;34m
+YELLOW := \033[1;33m
+RED    := \033[1;31m
+RESET  := \033[0m
+
+.PHONY: all
+all: prep $(TARGETS)
+	@echo "$(GREEN)[OK] Compilation complète réussie !$(RESET)"
+
+prep:
+	@mkdir -p $(BUILD_DIR) $(BIN_DIR)
+
+$(BIN_DIR)/serveur_mono: $(BUILD_DIR)/serveur_mono.o $(BUILD_DIR)/queue.o $(BUILD_DIR)/http.o
+	@echo "$(BLUE)[LINK] $@$(RESET)"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BIN_DIR)/serveur_multi: $(BUILD_DIR)/serveur_multi.o $(BUILD_DIR)/queue.o $(BUILD_DIR)/http.o
+	@echo "$(BLUE)[LINK] $@$(RESET)"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BIN_DIR)/serveur_mono_http: $(BUILD_DIR)/serveur_mono_http.o $(BUILD_DIR)/http.o $(BUILD_DIR)/queue.o
+	@echo "$(BLUE)[LINK HTTP] $@$(RESET)"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BIN_DIR)/serveur_multi_http: $(BUILD_DIR)/serveur_multi_http.o $(BUILD_DIR)/queue.o $(BUILD_DIR)/http.o
+	@echo "$(BLUE)[LINK HTTP] $@$(RESET)"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BIN_DIR)/test_queue: $(TEST_OBJ)
+	@echo "$(BLUE)[LINK TEST] $@$(RESET)"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	@echo "$(YELLOW)[CC] $<$(RESET)"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(TEST_DIR)/%.o: $(TEST_DIR)/%.c
+	@echo "$(YELLOW)[CC TEST] $<$(RESET)"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: debug
+debug: CFLAGS := $(CFLAGS) $(DBGFLAGS)
+debug: clean all
+	@echo "$(GREEN)[DEBUG MODE ACTIVÉ – ASan + UBSan]$(RESET)"
+
+.PHONY: test
+test: prep $(BIN_DIR)/test_queue
+	@echo "$(BLUE)[RUN] Test unitaire queue.c$(RESET)"
+	@$(BIN_DIR)/test_queue
+
+.PHONY: run_mono run_multi run_mono_http run_multi_http kill_servers
+
+run_mono: $(BIN_DIR)/serveur_mono
+	$(BIN_DIR)/serveur_mono &
+
+run_multi: $(BIN_DIR)/serveur_multi
+	$(BIN_DIR)/serveur_multi &
+
+run_mono_http: $(BIN_DIR)/serveur_mono_http
+	$(BIN_DIR)/serveur_mono_http &
+
+run_multi_http: $(BIN_DIR)/serveur_multi_http
+	$(BIN_DIR)/serveur_multi_http &
+
+kill_servers:
+	@echo "$(RED)→ Arrêt des serveurs...$(RESET)"
+	@pkill serveur_mono || true
+	@pkill serveur_multi || true
+	@pkill serveur_mono_http || true
+	@pkill serveur_multi_http || true
+
+.PHONY: clean
+clean:
+	@echo "$(RED)[CLEAN] Suppression build/ et bin/$(RESET)"
+	@rm -rf $(BUILD_DIR) $(BIN_DIR)
+
+
+
+# ================================================================================
+
+### FICHIER : README.md
+# ------------------------------------------------------------
+````markdown
+# 🚀 Serveur TCP & HTTP Hautes Performances — C/POSIX  
+### Projet Ingénieur — Multi-threading • Queue FIFO Générique • Benchmarks • Dashboard HTML
+
+---
+
+## 🏷️ Badges GitHub
+
+![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)
+![C Language](https://img.shields.io/badge/language-C-blue?style=flat-square)
+![POSIX](https://img.shields.io/badge/POSIX-Compliant-orange?style=flat-square)
+![Threads](https://img.shields.io/badge/Multi--threading-pthreads-purple?style=flat-square)
+![Python](https://img.shields.io/badge/Benchmark-Python3-yellow?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)
+
+---
+
+# 📦 Résumé du projet
+
+Ce projet implémente **quatre serveurs réseau haute performance** en C/POSIX :
+
+| Serveur | Protocole | Architecture | Fichier |
+|--------|-----------|--------------|---------|
+| `serveur_mono` | TCP | Mono-thread | `src/serveur_mono.c` |
+| `serveur_multi` | TCP | Multi-thread + queue | `src/serveur_multi.c` |
+| `serveur_mono_http` | HTTP 1.1 | Mono-thread | `src/serveur_mono_http.c` |
+| `serveur_multi_http` | HTTP 1.1 | Multi-thread + queue | `src/serveur_multi_http.c` |
+
+Le projet inclut :
+
+- ✔ File FIFO générique thread-safe (`queue.c`)
+- ✔ Parseur HTTP robuste (`http.c`)
+- ✔ Benchmarks Python (latence, CPU, RAM, RPS)
+- ✔ Dashboard interactif Plotly HTML
+- ✔ Scripts DevOps (run_all, monitoring, auto-rebuild)
+- ✔ Présentation académique PPTX + script PDF
+
+---
+
+# 🛠️ INSTALLATION (INSTALL.md intégré)
+
+## 1️⃣ Prérequis système (Ubuntu / Debian)
+
+```bash
+sudo apt update
+sudo apt install -y build-essential python3 python3-venv python3-pip curl netcat make git
+````
+
+Dépendances Python pour les benchmarks :
+
+```bash
+pip install psutil pandas matplotlib plotly kaleido
+```
+
+---
+
+## 2️⃣ Cloner le projet
+
+```bash
+git clone https://github.com/.../SERVER_BENCH.git
+cd server_project
+```
+
+---
+
+## 3️⃣ Compiler les serveurs C
+
+Mode normal :
+
+```bash
+make clean
+make -j$(nproc)
+```
+
+Mode debug avec sanitizers :
+
+```bash
+make debug
+```
+
+---
+
+## 4️⃣ Installer l’environnement Python
+
+```bash
+cd python
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
+
+## 5️⃣ Lancer un benchmark complet
+
+Depuis la racine du projet :
+
+```bash
+./scripts/run_all.sh
+```
+
+Les résultats seront générés dans :
+
+```
+python/results.json  
+python/results.xlsx  
+python/figures/*.png
+```
+
+Et un Dashboard interactif :
+
+```bash
+python/dashboard.html
+```
+
+---
+
+## 6️⃣ Tester le projet
+
+```bash
+./scripts/run_tests.sh
+```
+
+---
+
+## 7️⃣ Nettoyage complet
+
+```bash
+./scripts/clean_project.sh
+```
+
+---
+
+# 📂 Arborescence du projet
+
+```text
+server_project/
+├── src/
+│   ├── serveur_mono.c
+│   ├── serveur_multi.c
+│   ├── serveur_mono_http.c
+│   ├── serveur_multi_http.c
+│   ├── queue.c / queue.h
+│   ├── http.c / http.h
+│
+├── python/
+│   ├── benchmark.py
+│   ├── client_stress.py
+│   ├── dashboard.html
+│   ├── results.json / results.xlsx
+│   ├── figures/
+│
+├── presentation/
+│   ├── presentation_finale_serveur.pptx
+│   ├── script_presentation.pdf
+│   └── backgrounds/
+│
+├── scripts/
+│   ├── run_all.sh
+│   ├── run_servers.sh
+│   ├── run_tests.sh
+│   ├── clean_project.sh
+│   └── open_dashboard.sh
+│
+└── rebuild_project.py
+```
+
+---
+
+# 🧠 UML — Architecture & Threads
+
+## UML 1 — Architecture globale
+
+![UML Architecture](docs/uml_architecture.png)
+
+---
+
+## UML 2 — Queue FIFO Thread-Safe
+
+![UML Queue FIFO](docs/uml_queue.png)
+
+---
+
+## UML 3 — Multi-threading (Workers & Dispatcher)
+
+![UML Threads](docs/uml_threads.png)
+
+---
+
+# 📊 Résultats Benchmark (images générées)
+
+## Throughput (req/s)
+
+![Throughput](python/figures/1-throughput.png)
+
+## Latence P99
+
+![Latency P99](python/figures/2-latency_p99.png)
+
+## CPU Usage
+
+![CPU](python/figures/3-cpu.png)
+
+## Mémoire
+
+![Memory](python/figures/4-memory.png)
+
+## Speedup Multi-thread
+
+![Speedup](python/figures/5-speedup.png)
+
+---
+
+# 🧪 Tests unitaires
+
+```bash
+make test
+```
+
+* Test FIFO
+* Test multi-thread
+* Tests d’intégrité sur queue
+
+---
+
+# 🛠️ Exécution des serveurs
+
+```bash
+make run_mono
+make run_multi
+make run_mono_http
+make run_multi_http
+```
+
+Stopper :
+
+```bash
+make kill_servers
+```
+
+---
+
+# 🎤 Présentation académique
+
+```
+presentation/presentation_finale_serveur.pptx
+presentation/script_presentation.pdf
+```
+
+Inclut :
+
+* UML
+* Architecture serveur
+* Expérimentation
+* Analyse des performances
+
+---
+
+# 👤 **Auteurs — Membres du groupe**
+
+| Membre                 | Rôle                                     | Expertise                           |
+| ---------------------- | ---------------------------------------- | ----------------------------------- |
+| **Walid Ben Touhami**  | Serveur multi-thread, Benchmarks, DevOps | Multi-threading, queue, performance |
+| **Yassin Ben Aoun**    | Parsing HTTP, serveurs HTTP              | HTTP 1.1, robustesse protocolaire   |
+| **Ghada Sakouhi**      | Architecture & queue générique           | UML, synchronisation                |
+| **Islem Ben Chaabene** | Serveur TCP mono-thread                  | C bas-niveau, sockets               |
+
+---
+
+# 📄 Licence
+
+```
+MIT License — usage académique et professionnel autorisé
+```
+
+
+
+# ================================================================================
+
+### FICHIER : create_http_files.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+create_http_files.py
+--------------------
+Script générateur pour les fichiers HTTP côté C.
+
+Actuellement, il (re)génère uniquement :
+  - src/serveur_multi_http.c
+
+Les fichiers suivants sont considérés comme stables et ne sont
+pas régénérés automatiquement :
+  - src/http.c
+  - src/http.h
+  - src/serveur_mono_http.c
+
+Si tu veux étendre le script plus tard, tu pourras ajouter d’autres
+templates dans ce fichier.
+
+Usage :
+  python3 create_http_files.py
+"""
+
+from pathlib import Path
+import textwrap
+
+ROOT = Path(__file__).resolve().parent
+SRC_DIR = ROOT / "src"
+SRC_DIR.mkdir(exist_ok=True)
+
+SERVEUR_MULTI_HTTP_PATH = SRC_DIR / "serveur_multi_http.c"
+
+MULTI_HTTP_TEMPLATE = textwrap.dedent(r"""\
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <unistd.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
+    #include <sys/socket.h>
+
+    #include "queue.h"
+    #include "http.h"
+
+    #define HTTP_PORT    8081      /* Port HTTP multi-thread (distinct du TCP) */
+    #define WORKERS      8
+    #define BACKLOG      64
+    #define BUFFER_SIZE  4096
+
+    typedef struct {
+        int client_fd;
+    } job_t;
+
+    static queue_t job_queue;
+
+    /**
+     * Thread worker : dépile un job de la queue, lit la requête HTTP,
+     * route la requête et envoie une réponse appropriée.
+     */
+    static void* worker(void *arg) {
+        (void)arg;
+
+        for (;;) {
+            job_t *job = (job_t*) queue_pop(&job_queue);
+            if (!job) {
+                /* Si shutdown() a été appelé, queue_pop peut retourner NULL */
+                continue;
+            }
+
+            char buffer[BUFFER_SIZE];
+            ssize_t n = recv(job->client_fd, buffer, sizeof(buffer) - 1, 0);
+            if (n <= 0) {
+                close(job->client_fd);
+                free(job);
+                continue;
+            }
+            buffer[n] = '\0';
+
+            printf("\n==== HTTP REQUEST (multi) ====\n%.*s\n", (int)n, buffer);
+
+            char method[16] = {0};
+            char path[256]  = {0};
+            char query[256] = {0};
+
+            parse_http_request(buffer, method, path, query);
+            printf("[MULTI_HTTP] METHOD='%s' | PATH='%s' | QUERY='%s'\n",
+                   method, path, query);
+
+            /* Routage très simple */
+            if (strcmp(path, "/hello") == 0) {
+                const char *body = "{\"msg\":\"Hello from multi-thread HTTP server\"}";
+                send_http_response(job->client_fd,
+                                   "200 OK",
+                                   "application/json",
+                                   body);
+            }
+            else if (strcmp(path, "/") == 0) {
+                const char *body =
+                    "<html><body>"
+                    "<h1>Multi-thread HTTP Server</h1>"
+                    "<p>Bienvenue sur le serveur HTTP multi-thread.</p>"
+                    "</body></html>";
+                send_http_response(job->client_fd,
+                                   "200 OK",
+                                   "text/html",
+                                   body);
+            }
+            else {
+                send_http_response(job->client_fd,
+                                   "404 Not Found",
+                                   "text/plain",
+                                   "404 NOT FOUND");
+            }
+
+            close(job->client_fd);
+            free(job);
+        }
+
+        return NULL; /* important pour éviter le warning GCC */
+    }
+
+    int main(void) {
+        queue_init(&job_queue, 128);
+
+        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd < 0) {
+            perror("socket");
+            return EXIT_FAILURE;
+        }
+
+        int opt = 1;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            perror("setsockopt SO_REUSEADDR");
+        }
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family      = AF_INET;
+        addr.sin_port        = htons(HTTP_PORT);
+        addr.sin_addr.s_addr = INADDR_ANY;
+
+        if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            perror("bind");
+            close(server_fd);
+            return EXIT_FAILURE;
+        }
+
+        if (listen(server_fd, BACKLOG) < 0) {
+            perror("listen");
+            close(server_fd);
+            return EXIT_FAILURE;
+        }
+
+        printf("Serveur HTTP multi-thread en écoute sur port %d...\n", HTTP_PORT);
+
+        pthread_t workers[WORKERS];
+        for (int i = 0; i < WORKERS; i++) {
+            if (pthread_create(&workers[i], NULL, worker, NULL) != 0) {
+                perror("pthread_create");
+                close(server_fd);
+                return EXIT_FAILURE;
+            }
+        }
+
+        for (;;) {
+            int client_fd = accept(server_fd, NULL, NULL);
+            if (client_fd < 0) {
+                perror("accept");
+                continue;
+            }
+
+            job_t *job = (job_t*)malloc(sizeof(job_t));
+            if (!job) {
+                fprintf(stderr, "malloc failed\n");
+                close(client_fd);
+                continue;
+            }
+            job->client_fd = client_fd;
+
+            if (queue_push(&job_queue, job) < 0) {
+                fprintf(stderr, "queue_push failed\n");
+                close(client_fd);
+                free(job);
+                continue;
+            }
+        }
+
+        /* Code théoriquement non atteint (serveur infini) */
+        close(server_fd);
+        queue_destroy(&job_queue);
+        return EXIT_SUCCESS;
+    }
+    """)
+
+
+def write_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    print(f"✔ Fichier généré : {path}")
+
+
+def main() -> None:
+    print("──────────────────────────────────────────────")
+    print("🛠  Génération des fichiers HTTP (serveur_multi_http.c)")
+    print("Racine projet :", ROOT)
+    print("──────────────────────────────────────────────")
+
+    write_file(SERVEUR_MULTI_HTTP_PATH, MULTI_HTTP_TEMPLATE)
+
+    print("\n✅ Génération terminée. Tu peux maintenant lancer :")
+    print("   make clean && make -j")
+    print("   ./bin/serveur_multi_http   # test manuel HTTP sur port 8081")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : docs/rapport.tex
+# ------------------------------------------------------------
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Étude comparative entre un serveur TCP mono-thread et multi-thread en C}
+\author{Votre Nom}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+L'objectif de ce projet est de comparer les performances et le comportement
+de deux architectures de serveurs TCP :
+\begin{itemize}
+    \item un serveur mono-thread, séquentiel, traitant une connexion à la fois;
+    \item un serveur multi-thread, basé sur un pool de threads et une file FIFO
+          thread-safe pour répartir la charge.
+\end{itemize}
+
+Cette étude s'inscrit dans le cadre d'un module de systèmes d'exploitation avancés
+et vise à illustrer concrètement les problématiques de concurrence, d'ordonnancement,
+de synchronisation, de saturation CPU et de scalabilité.
+
+\chapter{Architecture des serveurs}
+
+\section{Serveur mono-thread}
+Le serveur mono-thread est une boucle simple :
+\begin{enumerate}
+    \item appel bloquant à \texttt{accept()};
+    \item réception d'un entier 32 bits;
+    \item exécution d'un traitement CPU simulé;
+    \item envoi de la réponse (carré de l'entier + timestamp);
+    \item fermeture de la connexion.
+\end{enumerate}
+
+\section{Serveur multi-thread}
+Le serveur multi-thread utilise :
+\begin{itemize}
+    \item un socket d'écoute unique;
+    \item une file FIFO thread-safe bornée;
+    \item un pool de workers (8 threads) qui dépilent les sockets clients,
+          effectuent le traitement et répondent.
+\end{itemize}
+
+Le découplage accept / traitement permet d'exploiter plusieurs cœurs CPU
+et de mieux absorber les pics de charge.
+
+\section{File d'attente thread-safe}
+La file est implémentée via:
+\begin{itemize}
+    \item une liste chaînée;
+    \item un \texttt{pthread\_mutex\_t} pour protéger l'accès;
+    \item deux variables de condition : \texttt{not\_empty} et \texttt{not\_full};
+    \item un drapeau \texttt{shutdown} pour un arrêt propre.
+\end{itemize}
+
+\chapter{Méthodologie de benchmark}
+
+Le benchmark est réalisé avec un client Python multi-thread qui ouvre
+un grand nombre de connexions simultanées (10, 50, 100, 200, 300 clients).
+Pour chaque configuration, nous mesurons:
+\begin{itemize}
+    \item le temps total d'exécution;
+    \item la latence moyenne, médiane, P95, P99;
+    \item le débit en requêtes par seconde;
+    \item l'utilisation CPU et la mémoire RSS côté serveur.
+\end{itemize}
+
+Les mesures sont agrégées dans un fichier \texttt{results.xlsx}, puis
+visualisées avec des graphiques générés par \texttt{plot\_results.py}.
+
+\chapter{Résultats expérimentaux}
+
+\section{Débit en fonction du nombre de clients}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../python/figures/1-throughput.png}
+  \caption{Débit (req/s) en fonction du nombre de clients.}
+\end{figure}
+
+\section{Latence P99}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../python/figures/2-latency_p99.png}
+  \caption{Latence P99 en fonction du nombre de clients.}
+\end{figure}
+
+\section{Utilisation CPU et mémoire}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../python/figures/3-cpu.png}
+  \caption{CPU moyen en fonction du nombre de clients.}
+\end{figure}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../python/figures/4-memory.png}
+  \caption{Mémoire RSS en fonction du nombre de clients.}
+\end{figure}
+
+\section{Speedup multi-thread}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../python/figures/5-speedup.png}
+  \caption{Speedup (multi / mono) en fonction de la charge.}
+\end{figure}
+
+\chapter{Analyse et discussion}
+
+Les résultats montrent généralement que :
+\begin{itemize}
+    \item le serveur mono-thread atteint rapidement un plateau de débit;
+    \item le serveur multi-thread continue de monter en charge jusqu'à
+          l'utilisation quasi-complète des cœurs CPU;
+    \item la latence P99 augmente fortement pour le mono-thread dès que le
+          nombre de clients dépasse quelques dizaines;
+    \item le multi-thread offre une meilleure réactivité globale, au prix
+          d'une complexité de code accrue (synchronisation, file d'attente).
+\end{itemize}
+
+D'un point de vue pédagogique, ce projet illustre clairement:
+\begin{itemize}
+    \item les limites du modèle strictement séquentiel;
+    \item les gains apportés par le parallélisme;
+    \item les problèmes de contention et de saturation CPU;
+    \item l'importance de limiter la taille des queues pour maîtriser la mémoire.
+\end{itemize}
+
+\chapter{Conclusion}
+
+Le serveur multi-thread basé sur un pool de threads et une queue bornée
+s'avère nettement plus performant et scalable que le serveur mono-thread,
+surtout en présence d'une charge importante et de traitements CPU coûteux.
+
+Cependant, cette amélioration de performance s'accompagne d'une complexité
+de conception (synchronisation, arrêt propre, gestion des erreurs) qui doit
+être soigneusement maîtrisée, en particulier dans des contextes industriels.
+
+\end{document}
+
+
+# ================================================================================
+
+### FICHIER : export_all_source.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from datetime import datetime
+from pathlib import Path
+
+# ================= CONFIGURATION =================
+PROJECT_ROOT = Path.cwd()
+OUTPUT_FILE = PROJECT_ROOT / "TOUT_LE_CODE_SOURCE_COMPLET.txt"
+
+# Extensions à inclure (fichiers code / config)
+INCLUDE_EXT = {
+    ".c", ".h",
+    ".py", ".sh",
+    ".md", ".tex",
+    ".yml", ".yaml",
+    ".json", ".toml",
+    ".cfg", ".conf",
+}
+
+# Fichiers SANS extension qu'on veut inclure (ex : Makefile)
+INCLUDE_NO_EXT = {
+    "Makefile",
+    "CMakeLists.txt",
+}
+
+EXCLUDE_DIRS = {
+    "venv", "__pycache__", ".git",
+    "bin", "build", "logs",
+    "figures", "proofs",
+    "presentation/backgrounds",
+    "results",
+}
+
+EXCLUDE_FILES = {
+    "results.json",
+    "results.xlsx",
+    "dashboard.html",
+    "presentation_finale_serveur.pptx",
+    "script_presentation.pdf",
+    ".gitignore",
+    OUTPUT_FILE.name,
+}
+
+
+def should_include(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    if path.name in EXCLUDE_FILES:
+        return False
+    if path.name.startswith("."):
+        return False
+
+    # Exclusion par répertoire
+    if any(part in EXCLUDE_DIRS for part in path.parts):
+        return False
+
+    if path.suffix:
+        return path.suffix.lower() in INCLUDE_EXT
+
+    # Fichier sans extension : on filtre explicitement
+    return path.name in INCLUDE_NO_EXT
+
+
+def main():
+    files = sorted([p for p in PROJECT_ROOT.rglob("*") if should_include(p)])
+
+    with OUTPUT_FILE.open("w", encoding="utf-8") as out:
+        out.write("# PROJET COMPLET - TOUT LE CODE SOURCE\n")
+        out.write(f"# Généré le {datetime.now().strftime('%d/%m/%Y à %H:%M:%S')}\n")
+        out.write(f"# Nombre de fichiers inclus : {len(files)}\n")
+        out.write(f"# Chemin du projet : {PROJECT_ROOT}\n")
+        out.write("#" + "=" * 80 + "\n\n")
+
+        for file_path in files:
+            rel_path = file_path.relative_to(PROJECT_ROOT)
+            out.write(f"### FICHIER : {rel_path}\n")
+            out.write("# " + "-" * 60 + "\n")
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                out.write(content)
+            except UnicodeDecodeError:
+                out.write("# [ERREUR : fichier binaire ou encodage non UTF-8]\n")
+            except Exception as e:
+                out.write(f"# [ERREUR lors de la lecture : {e}]\n")
+            out.write("\n\n")
+            out.write("# " + "=" * 80 + "\n\n")
+
+    size_kb = OUTPUT_FILE.stat().st_size // 1024
+    print("Succès ! Tout le code source a été exporté dans :")
+    print(f"→ {OUTPUT_FILE}")
+    print(f"→ Taille approximative : {size_kb} Ko")
+    print(f"→ {len(files)} fichiers inclus")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : presentation/generate_backgrounds.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from pathlib import Path
+
+try:
+    from PIL import Image, ImageDraw
+except ImportError:
+    raise SystemExit(
+        "❌ Le module Pillow (PIL) est manquant.\n"
+        "   Installe-le dans le venv : pip install pillow"
+    )
+
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = ROOT / "presentation" / "backgrounds"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def gen_background(color, name: str) -> None:
+    img = Image.new("RGB", (1920, 1080), color)
+    draw = ImageDraw.Draw(img)
+    draw.text((50, 50), "Serveur Haute Performance", fill=(255, 255, 255))
+    out_path = OUTPUT_DIR / name
+    img.save(out_path)
+    print(f"✔ Background généré : {out_path}")
+
+
+def main() -> None:
+    gen_background((10, 30, 60), "background_blue_engineer.png")
+    gen_background((20, 20, 20), "background_dark_tech.png")
+    gen_background((230, 230, 230), "background_white_clean.png")
+    print(f"✔ Tous les backgrounds ont été générés dans {OUTPUT_DIR}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : presentation/generate_pdf_script.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from pathlib import Path
+
+try:
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+except ImportError:
+    raise SystemExit(
+        "❌ Le module reportlab est manquant.\n"
+        "   Installe-le dans le venv : pip install reportlab"
+    )
+
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = ROOT / "presentation"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+PDF_PATH = OUTPUT_DIR / "script_presentation.pdf"
+
+
+def main() -> None:
+    doc = SimpleDocTemplate(str(PDF_PATH), pagesize=A4)
+    styles = getSampleStyleSheet()
+    content = []
+
+    sections = [
+        ("Introduction",
+         "Présentation du projet Serveur Haute Performance (TCP/HTTP, C/POSIX, Python)."),
+        ("Architecture globale",
+         "Diagramme UML, modules, file FIFO, thread pool, routage HTTP."),
+        ("Serveur TCP Mono-thread – Yassine",
+         "Boucle accept → recv → traitement → send, limites en scalabilité."),
+        ("Serveur HTTP Mono-thread – Islem",
+         "Parsing HTTP, routes de base, réponses HTML/JSON."),
+        ("Serveur Multi-thread – Walid",
+         "Workers permanents, file FIFO bornée, optimisation haute charge."),
+        ("Serveur HTTP Multi-thread – Ghada",
+         "Routage HTTP concurrent, gestion de plusieurs clients simultanés."),
+        ("Benchmarks Python",
+         "Latence, débit, CPU/RAM, scripts de génération de graphiques et dashboard."),
+        ("Conclusion",
+         "Synthèse des résultats et perspectives d’extension (HTTPS, load-balancing, etc.)."),
+    ]
+
+    for title, body in sections:
+        content.append(Paragraph(f"<b>{title}</b>", styles["Title"]))
+        content.append(Spacer(1, 12))
+        content.append(Paragraph(body, styles["BodyText"]))
+        content.append(Spacer(1, 20))
+
+    doc.build(content)
+    print(f"✔ PDF généré : {PDF_PATH}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : presentation/generate_pptx_final.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from pathlib import Path
+
+try:
+    from pptx import Presentation
+except ImportError:
+    raise SystemExit(
+        "❌ Le module python-pptx est manquant.\n"
+        "   Installe-le dans le venv : pip install python-pptx"
+    )
+
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = ROOT / "presentation"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+OUTPUT_FILE = OUTPUT_DIR / "presentation_finale_serveur.pptx"
+
+
+def add_title_slide(prs: Presentation, title: str, subtitle: str = ""):
+    slide_layout = prs.slide_layouts[0]
+    slide = prs.slides.add_slide(slide_layout)
+    slide.shapes.title.text = title
+    if subtitle:
+        slide.placeholders[1].text = subtitle
+
+
+def add_bullet_slide(prs: Presentation, title: str, bullets):
+    slide_layout = prs.slide_layouts[1]
+    slide = prs.slides.add_slide(slide_layout)
+    slide.shapes.title.text = title
+    body = slide.placeholders[1].text_frame
+    body.clear()
+    for b in bullets:
+        p = body.add_paragraph()
+        p.text = b
+        p.level = 0
+
+
+def main() -> None:
+    prs = Presentation()
+
+    # Slide 1 — Titre
+    add_title_slide(
+        prs,
+        "Serveur Haute Performance – TCP & HTTP",
+        "Projet Ingénieur – Multi-threading, Queue FIFO, Benchmarks Python"
+    )
+
+    # Slide 2 — Plan
+    add_bullet_slide(prs, "Plan de la présentation", [
+        "1. Architecture globale du projet",
+        "2. Serveur TCP mono-thread – Yassine",
+        "3. Serveur HTTP mono-thread – Islem",
+        "4. Serveur TCP Multi-thread – Walid",
+        "5. Serveur HTTP Multi-thread – Ghada",
+        "6. Benchmarks & Dashboard",
+        "7. Répartition des tâches et conclusion",
+    ])
+
+    # Yassine
+    add_bullet_slide(prs, "TCP Mono-thread (Yassine)", [
+        "Boucle accept → recv → traitement → send.",
+        "Modèle séquentiel simple et pédagogique.",
+        "Faible scalabilité sous forte charge.",
+        "Référence de base pour la comparaison de performance.",
+    ])
+
+    # Islem
+    add_bullet_slide(prs, "HTTP Mono-thread (Islem)", [
+        "Serveur HTTP minimaliste basé sur sockets TCP.",
+        "Parsing de la ligne de requête (méthode, chemin, query).",
+        "Routes simples : / et /hello.",
+        "Réponses HTML et JSON, HTTP/1.1.",
+    ])
+
+    # Walid
+    add_bullet_slide(prs, "TCP Multi-thread (Walid)", [
+        "Thread pool fixe de workers.",
+        "File FIFO générique thread-safe (queue.c).",
+        "Traitement concurrent de nombreuses connexions.",
+        "Optimisation de la latence et du débit (req/s).",
+    ])
+
+    # Ghada
+    add_bullet_slide(prs, "HTTP Multi-thread (Ghada)", [
+        "Serveur HTTP concurrent basé sur la queue FIFO.",
+        "Routing simple : /, /hello, gestion 404.",
+        "Meilleure scalabilité pour de nombreux clients HTTP.",
+        "Intégration avec le reste de l’architecture C.",
+    ])
+
+    # UML
+    add_bullet_slide(prs, "Diagramme UML – Architecture", [
+        "Composants principaux : Server, Worker, Queue, Client.",
+        "Séparation accept (dispatcher) / traitement (workers).",
+        "Queue FIFO comme cœur de la synchronisation.",
+    ])
+
+    # Benchmarks
+    add_bullet_slide(prs, "Benchmarks Python – Résultats", [
+        "Client de stress multi-thread (ThreadPoolExecutor).",
+        "Mesures : latence moyenne, médiane, P95, P99.",
+        "Débit (requêtes/seconde), CPU et mémoire via psutil.",
+        "Export JSON/XLSX + figures PNG/SVG + dashboard HTML.",
+    ])
+
+    # Répartition
+    add_bullet_slide(prs, "Répartition des tâches", [
+        "Walid – Serveur Multi-thread TCP + Benchmarks + DevOps.",
+        "Yassine – Serveur TCP Mono-thread.",
+        "Islem – Serveur HTTP Mono-thread.",
+        "Ghada – Serveur HTTP Multi-thread + routage.",
+    ])
+
+    prs.save(str(OUTPUT_FILE))
+    print(f"✔ PPTX généré : {OUTPUT_FILE}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : python/benchmark.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import subprocess
+import time
+import psutil
+import json
+import pandas as pd
+import os
+import threading
+from pathlib import Path
+
+from client_stress import lancer_stress_test
+
+TEST_CLIENTS = [10, 50, 100, 200, 300]
+
+ROOT = Path(__file__).resolve().parent.parent
+BIN_MONO = ROOT / "bin" / "serveur_mono"
+BIN_MULTI = ROOT / "bin" / "serveur_multi"
+
+SERVERS = {
+    "mono": {"bin": str(BIN_MONO), "port": 5050},
+    "multi": {"bin": str(BIN_MULTI), "port": 5051},
+}
+
+
+def compiler():
+    print("[BENCH] Compilation (make clean + make all)…")
+    subprocess.run(["make", "clean"], cwd=ROOT, check=True)
+    subprocess.run(["make", "all"], cwd=ROOT, check=True)
+
+
+def lancer_serveur(type_srv: str) -> subprocess.Popen:
+    bin_path = SERVERS[type_srv]["bin"]
+    proc = subprocess.Popen(
+        [bin_path],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(1.0)
+    return proc
+
+
+def arreter_serveur(proc: subprocess.Popen):
+    proc.terminate()
+    try:
+        proc.wait(timeout=2.0)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+
+def monitor_process(pid: int, stop_event: threading.Event, cpu_samples, mem_samples):
+    try:
+        p = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return
+    while not stop_event.is_set():
+        try:
+            cpu = p.cpu_percent(interval=0.2)
+            mem = p.memory_info().rss / (1024 * 1024)
+            cpu_samples.append(cpu)
+            mem_samples.append(mem)
+        except psutil.NoSuchProcess:
+            break
+
+
+def benchmark_serveur(type_srv: str):
+    port = SERVERS[type_srv]["port"]
+    results = []
+
+    for nclients in TEST_CLIENTS:
+        print(f"[BENCH] {type_srv} - {nclients} clients")
+
+        proc = lancer_serveur(type_srv)
+        pid = proc.pid
+
+        cpu_samples = []
+        mem_samples = []
+
+        stop_evt = threading.Event()
+        mon_thread = threading.Thread(
+            target=monitor_process,
+            args=(pid, stop_evt, cpu_samples, mem_samples),
+        )
+        mon_thread.start()
+
+        t_start = time.perf_counter()
+        res = lancer_stress_test("127.0.0.1", port, nclients)
+        t_end = time.perf_counter()
+
+        stop_evt.set()
+        mon_thread.join()
+        arreter_serveur(proc)
+
+        elapsed = t_end - t_start
+        throughput = res["success"] / elapsed if elapsed > 0 else 0.0
+
+        cpu_mean = sum(cpu_samples) / len(cpu_samples) if cpu_samples else None
+        mem_mean = sum(mem_samples) / len(mem_samples) if mem_samples else None
+
+        results.append({
+            "server": type_srv,
+            "clients": nclients,
+            "success": res["success"],
+            "fail": res["fail"],
+            "mean": res["mean"],
+            "median": res["median"],
+            "p95": res["p95"],
+            "p99": res["p99"],
+            "max_latency": res["max"],
+            "cpu_mean": cpu_mean,
+            "mem_mean": mem_mean,
+            "throughput_rps": throughput,
+            "time_total": elapsed,
+        })
+
+    return results
+
+
+def main():
+    os.chdir(ROOT / "python")  # pour générer results.* ici
+    compiler()
+    final_results = []
+    for srv_type in SERVERS.keys():
+        r = benchmark_serveur(srv_type)
+        final_results.extend(r)
+
+    with open("results.json", "w", encoding="utf-8") as f:
+        json.dump(final_results, f, indent=4, ensure_ascii=False)
+
+    df = pd.DataFrame(final_results)
+    df.to_excel("results.xlsx", index=False)
+    print("[BENCH] Résultats dans python/results.json / python/results.xlsx")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : python/client_stress.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import socket
+import struct
+import time
+import statistics
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+def envoyer_requete(host: str, port: int, number: int) -> float:
+    start = time.perf_counter()
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(5.0)
+            s.connect((host, port))
+            data = struct.pack("!i", number)
+            s.sendall(data)
+            result_raw = s.recv(4)
+            ts_raw = s.recv(8)
+            if len(result_raw) < 4 or len(ts_raw) < 8:
+                return -1.0
+            _ = struct.unpack("!i", result_raw)[0]
+            _ = struct.unpack("!q", ts_raw)[0]
+    except Exception:
+        return -1.0
+    end = time.perf_counter()
+    return (end - start) * 1000.0
+
+
+def lancer_stress_test(host: str, port: int, clients: int, number: int = 42):
+    latences = []
+    with ThreadPoolExecutor(max_workers=clients) as executor:
+        futures = [executor.submit(envoyer_requete, host, port, number)
+                   for _ in range(clients)]
+        for f in as_completed(futures):
+            lat = f.result()
+            if lat >= 0:
+                latences.append(lat)
+
+    if not latences:
+        return {
+            "clients": clients, "success": 0, "fail": clients,
+            "mean": None, "median": None, "p95": None, "p99": None,
+            "max": None, "latences": [],
+        }
+
+    latences_sorted = sorted(latences)
+    n = len(latences_sorted)
+
+    def percentile(p):
+        if n == 0:
+            return None
+        k = int(p * (n - 1))
+        return latences_sorted[k]
+
+    return {
+        "clients": clients,
+        "success": len(latences),
+        "fail": clients - len(latences),
+        "mean": statistics.mean(latences),
+        "median": statistics.median(latences),
+        "p95": percentile(0.95),
+        "p99": percentile(0.99),
+        "max": max(latences),
+        "latences": latences,
+    }
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Client de stress TCP")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--clients", type=int, default=50)
+    args = parser.parse_args()
+
+    print(f"[CLIENT] {args.clients} connexions vers {args.host}:{args.port}")
+    res = lancer_stress_test(args.host, args.port, args.clients)
+    print(res)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : python/export_html.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+export_html.py — Génération du dashboard HTML avec sécurité .format()
+Compatible avec CSS, évite KeyError via double-accolades.
+"""
+
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+RESULTS_JSON = ROOT / "results.json"
+OUTPUT_HTML = ROOT / "dashboard.html"
+FIG_DIR = ROOT / "figures"
+
+def load_results():
+    if not RESULTS_JSON.exists():
+        raise FileNotFoundError(f"Fichier introuvable : {RESULTS_JSON}")
+
+    with RESULTS_JSON.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+
+def build_table(data):
+    if not data:
+        return "<p>Aucune donnée disponible.</p>"
+
+    # Récupération des colonnes de la première ligne
+    cols = data[0].keys()
+
+    thead = "".join(f"<th>{c}</th>" for c in cols)
+    rows = []
+    for row in data:
+        tr = "".join(f"<td>{row[c]}</td>" for c in cols)
+        rows.append(f"<tr>{tr}</tr>")
+
+    tbody = "\n".join(rows)
+
+    return f"""
+    <table class="perf-table">
+        <thead><tr>{thead}</tr></thead>
+        <tbody>{tbody}</tbody>
+    </table>
+    """
+
+
+def main():
+    data = load_results()
+    table_html = build_table(data)
+
+    # ⚠ Toutes les accolades CSS sont doublées {{ }}
+    html = """
+<html>
+<head>
+<title>{title}</title>
+<style>
+body {{
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+    background: #fafafa;
+}}
+h1 {{
+    color: #0d47a1;
+}}
+.perf-table {{
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+}}
+.perf-table th {{
+    background: #e3f2fd;
+    padding: 8px;
+    border: 1px solid #ccc;
+}}
+.perf-table td {{
+    padding: 6px;
+    border: 1px solid #ccc;
+    text-align: center;
+}}
+img {{
+    max-width: 600px;
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 4px;
+    margin: 8px;
+}}
+</style>
+</head>
+<body>
+
+<h1>{title}</h1>
+
+<h2>📊 Résultats du benchmark</h2>
+{table}
+
+<h2>📈 Graphiques</h2>
+{images}
+
+</body>
+</html>
+"""
+
+    # 🔍 Récupération des images
+    img_tags = ""
+    if FIG_DIR.exists():
+        for fig in sorted(FIG_DIR.glob("*.png")):
+            img_tags += f'<div><img src="figures/{fig.name}" alt="{fig.name}"></div>\n'
+
+    html_f = html.format(
+        title="Dashboard – Serveur Haute Performance",
+        table=table_html,
+        images=img_tags
+    )
+
+    OUTPUT_HTML.write_text(html_f, encoding="utf-8")
+    print(f"✔ Dashboard HTML généré : {OUTPUT_HTML}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : python/init.py
+# ------------------------------------------------------------
+"""
+Python Utilities for High-Performance C Server Benchmark Project
+Author: Walid Ben Touhami
+Modules included:
+  - benchmark.py        → Main benchmark engine
+  - client_stress.py    → Load-generation client
+  - export_html.py      → Dashboard generation
+  - plot_results.py     → Figures PNG/SVG
+"""
+__all__ = [
+    "benchmark",
+    "client_stress",
+    "export_html",
+    "plot_results",
+]
+
+
+
+# ================================================================================
+
+### FICHIER : python/open_dashboard.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+open_dashboard.py – CLI & Web UI pour visualiser les résultats du benchmark
+
+Fonctionnalités :
+  - CLI interactive avec autocomplétion et couleurs
+  - Ouverture du dashboard HTML dans un navigateur
+  - Affichage d’un résumé des résultats (results.json)
+  - Export automatique des figures dans un ZIP (figures_export.zip)
+  - Serveur web Flask local :
+        /        → page d’accueil
+        /results → résumé des résultats (HTML)
+        /graphs  → affichage des PNG
+        /compare → comparaison mono vs multi
+"""
+
+import json
+import os
+import sys
+import shutil
+import webbrowser
+from pathlib import Path
+
+import pandas as pd
+
+# Flask est optionnel : on gère proprement son absence
+try:
+    from flask import Flask, jsonify, send_from_directory, render_template_string
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
+
+# =========================
+#  CONSTANTES ET CHEMINS
+# =========================
+
+PY_ROOT = Path(__file__).resolve().parent              # .../server_project/python
+PROJECT_ROOT = PY_ROOT.parent                          # .../server_project
+RESULTS_JSON = PY_ROOT / "results.json"
+RESULTS_XLSX = PY_ROOT / "results.xlsx"
+FIG_DIR = PY_ROOT / "figures"
+DASHBOARD_HTML = PY_ROOT / "dashboard.html"
+EXPORT_DIR = PY_ROOT / "exports"
+EXPORT_ZIP = EXPORT_DIR / "figures_export.zip"
+
+LOG_FILE = PROJECT_ROOT / "logs" / "dashboard_open.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+COMMANDS = [
+    "help",
+    "open",
+    "summary",
+    "list-fig",
+    "export",
+    "web",
+    "quit",
+    "exit",
+]
+
+# =========================
+#  UTILITAIRES COULEURS
+# =========================
+
+RESET = "\033[0m"
+BOLD = "\033[1m"
+GREEN = "\033[1;32m"
+RED = "\033[1;31m"
+YELLOW = "\033[1;33m"
+BLUE = "\033[1;34m"
+CYAN = "\033[1;36m"
+MAGENTA = "\033[1;35m"
+
+
+def log(msg: str) -> None:
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with LOG_FILE.open("a", encoding="utf-8") as f:
+        f.write(msg + "\n")
+
+
+def print_info(msg: str) -> None:
+    s = f"{BLUE}ℹ {msg}{RESET}"
+    print(s)
+    log(msg)
+
+
+def print_ok(msg: str) -> None:
+    s = f"{GREEN}✔ {msg}{RESET}"
+    print(s)
+    log(msg)
+
+
+def print_warn(msg: str) -> None:
+    s = f"{YELLOW}⚠ {msg}{RESET}"
+    print(s)
+    log("[WARN] " + msg)
+
+
+def print_err(msg: str) -> None:
+    s = f"{RED}❌ {msg}{RESET}"
+    print(s, file=sys.stderr)
+    log("[ERROR] " + msg)
+
+
+# =========================
+#  CHARGEMENT RÉSULTATS
+# =========================
+
+def load_results_df() -> pd.DataFrame:
+    """Charge les résultats depuis results.json (prioritaire) ou results.xlsx."""
+    if RESULTS_JSON.exists():
+        try:
+            data = json.loads(RESULTS_JSON.read_text(encoding="utf-8"))
+            df = pd.DataFrame(data)
+            return df
+        except Exception as e:
+            print_warn(f"Impossible de lire results.json : {e}. Tentative XLSX…")
+
+    if RESULTS_XLSX.exists():
+        try:
+            df = pd.read_excel(RESULTS_XLSX)
+            return df
+        except Exception as e:
+            print_err(f"Impossible de lire results.xlsx : {e}")
+            raise
+
+    raise FileNotFoundError("Aucun fichier de résultats trouvé (results.json / results.xlsx).")
+
+
+def summarize_results(df: pd.DataFrame) -> str:
+    """Retourne une chaîne avec un résumé des résultats par serveur."""
+    lines = []
+    servers = df["server"].unique()
+    for srv in servers:
+        sub = df[df["server"] == srv]
+        if sub.empty:
+            continue
+
+        avg_throughput = sub["throughput_rps"].mean()
+        max_throughput = sub["throughput_rps"].max()
+        avg_p99 = sub["p99"].mean()
+        max_clients = sub["clients"].max()
+
+        lines.append(
+            f"  - {srv} :\n"
+            f"      • clients max testés : {int(max_clients)}\n"
+            f"      • débit moyen        : {avg_throughput:.1f} req/s\n"
+            f"      • débit max          : {max_throughput:.1f} req/s\n"
+            f"      • latence P99 moyenne: {avg_p99:.1f} ms\n"
+        )
+    return "\n".join(lines)
+
+
+# =========================
+#  ACTIONS CLI
+# =========================
+
+def action_open_dashboard():
+    """Ouvre dashboard.html dans le navigateur par défaut."""
+    if not DASHBOARD_HTML.exists():
+        print_err(f"dashboard.html introuvable : {DASHBOARD_HTML}")
+        print_info("Génère-le avec : python3 export_html.py (depuis le dossier python/).")
+        return
+
+    print_info(f"Ouverture du dashboard : {DASHBOARD_HTML}")
+    log(f"Ouvrir dashboard : {DASHBOARD_HTML}")
+    webbrowser.open_new_tab(DASHBOARD_HTML.as_uri())
+    print_ok("Navigateur lancé.")
+
+
+def action_summary():
+    """Affiche un résumé synthétique des résultats."""
+    try:
+        df = load_results_df()
+    except Exception as e:
+        print_err(str(e))
+        return
+
+    print(f"{MAGENTA}{BOLD}Résumé des résultats (par serveur) :{RESET}\n")
+    print(summarize_results(df))
+
+
+def action_list_figures():
+    """Liste les figures disponibles."""
+    if not FIG_DIR.exists():
+        print_err(f"Dossier des figures inexistant : {FIG_DIR}")
+        return
+
+    pngs = sorted(FIG_DIR.glob("*.png"))
+    svgs = sorted(FIG_DIR.glob("*.svg"))
+
+    if not pngs and not svgs:
+        print_warn(f"Aucune figure trouvée dans {FIG_DIR}")
+        return
+
+    print(f"{CYAN}{BOLD}Figures PNG :{RESET}")
+    for p in pngs:
+        print(f"  - {p.name}")
+
+    if svgs:
+        print(f"\n{CYAN}{BOLD}Figures SVG :{RESET}")
+        for p in svgs:
+            print(f"  - {p.name}")
+
+
+def action_export_figures():
+    """Crée un ZIP contenant dashboard.html + figures PNG/SVG."""
+    if not FIG_DIR.exists():
+        print_err(f"Dossier des figures inexistant : {FIG_DIR}")
+        return
+
+    EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    temp_dir = EXPORT_DIR / "tmp_bundle"
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copier dashboard.html si disponible
+    if DASHBOARD_HTML.exists():
+        shutil.copy2(DASHBOARD_HTML, temp_dir / "dashboard.html")
+
+    # Copier figures
+    count = 0
+    for ext in ("*.png", "*.svg"):
+        for fig in FIG_DIR.glob(ext):
+            shutil.copy2(fig, temp_dir / fig.name)
+            count += 1
+
+    if count == 0:
+        print_warn("Aucune figure à exporter.")
+        shutil.rmtree(temp_dir)
+        return
+
+    # Création du zip
+    if EXPORT_ZIP.exists():
+        EXPORT_ZIP.unlink()
+
+    zip_base = EXPORT_ZIP.with_suffix("")  # sans .zip
+    shutil.make_archive(str(zip_base), "zip", root_dir=temp_dir)
+
+    shutil.rmtree(temp_dir)
+
+    print_ok(f"Figures exportées dans : {EXPORT_ZIP}")
+    print_info("Tu peux copier ce ZIP vers Windows ou l’envoyer à ton enseignant.")
+
+
+# =========================
+#  SERVEUR FLASK
+# =========================
+
+def create_flask_app() -> "Flask":
+    app = Flask(__name__)
+
+    # Charger les données une fois au démarrage pour la version simple
+    try:
+        df = load_results_df()
+    except Exception as e:
+        print_err(f"Impossible de charger les résultats pour Flask : {e}")
+        df = None
+
+    @app.route("/")
+    def index():
+        html = """
+        <html>
+          <head>
+            <title>Serveur haute performance – Dashboard</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 2rem; }
+              a { text-decoration: none; color: #1565c0; }
+              h1 { color: #0d47a1; }
+              .card { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+            </style>
+          </head>
+          <body>
+            <h1>Serveur haute performance – Dashboard</h1>
+            <div class="card">
+              <h2>Sections</h2>
+              <ul>
+                <li><a href="/results">📊 Résultats</a></li>
+                <li><a href="/graphs">📈 Graphiques</a></li>
+                <li><a href="/compare">⚖ Comparaison mono vs multi</a></li>
+              </ul>
+            </div>
+          </body>
+        </html>
+        """
+        return html
+
+    @app.route("/results")
+    def results():
+        if df is None or df.empty:
+            return "Aucun résultat disponible.", 500
+        # Petit tableau HTML
+        table_html = df.to_html(classes="dataframe", index=False, border=0)
+
+        html = f"""
+        <html>
+          <head>
+            <title>Résultats benchmark</title>
+            <style>
+              body {{ font-family: Arial, sans-serif; margin: 2rem; }}
+              h1 {{ color: #0d47a1; }}
+              table.dataframe {{ border-collapse: collapse; width: 100%; }}
+              table.dataframe th, table.dataframe td {{
+                  border: 1px solid #ccc;
+                  padding: 4px 6px;
+                  font-size: 12px;
+              }}
+              table.dataframe th {{
+                  background-color: #e3f2fd;
+              }}
+            </style>
+          </head>
+          <body>
+            <h1>Résultats détaillés</h1>
+            {table_html}
+          </body>
+        </html>
+        """
+        return html
+
+    @app.route("/graphs")
+    def graphs():
+        if not FIG_DIR.exists():
+            return "Dossier des figures manquant.", 500
+
+        pngs = sorted(FIG_DIR.glob("*.png"))
+        svgs = sorted(FIG_DIR.glob("*.svg"))
+
+        imgs = ""
+        for p in pngs + svgs:
+            imgs += f'<div><h3>{p.name}</h3><img src="/static/figures/{p.name}" style="max-width: 800px;"></div><hr/>'
+
+        if not imgs:
+            imgs = "<p>Aucune figure trouvée.</p>"
+
+        html = f"""
+        <html>
+          <head>
+            <title>Graphiques</title>
+            <style>
+              body {{ font-family: Arial, sans-serif; margin: 2rem; }}
+              h1 {{ color: #0d47a1; }}
+              img {{ border: 1px solid #ddd; padding: 4px; background: #fafafa; }}
+            </style>
+          </head>
+          <body>
+            <h1>Graphiques de performances</h1>
+            {imgs}
+          </body>
+        </html>
+        """
+        return html
+
+    @app.route("/compare")
+    def compare():
+        if df is None or df.empty:
+            return "Aucun résultat disponible.", 500
+
+        servers = df["server"].unique()
+        if len(servers) < 2:
+            return "Comparaison impossible : un seul type de serveur présent.", 500
+
+        # On suppose "mono" et "multi"
+        try:
+            mono = df[df["server"] == "mono"]
+            multi = df[df["server"] == "multi"]
+        except KeyError:
+            return "Colonnes manquantes pour la comparaison.", 500
+
+        def agg_stats(sub):
+            return {
+                "throughput_mean": sub["throughput_rps"].mean(),
+                "throughput_max": sub["throughput_rps"].max(),
+                "p99_mean": sub["p99"].mean(),
+            }
+
+        mono_stats = agg_stats(mono)
+        multi_stats = agg_stats(multi)
+
+        speedup = 0.0
+        if mono_stats["throughput_mean"] and mono_stats["throughput_mean"] > 0:
+            speedup = multi_stats["throughput_mean"] / mono_stats["throughput_mean"]
+
+        html = render_template_string(
+            """
+            <html>
+              <head>
+                <title>Comparaison mono vs multi</title>
+                <style>
+                  body { font-family: Arial, sans-serif; margin: 2rem; }
+                  h1 { color: #0d47a1; }
+                  table { border-collapse: collapse; }
+                  th, td { border: 1px solid #ccc; padding: 6px 10px; }
+                  th { background: #e3f2fd; }
+                </style>
+              </head>
+              <body>
+                <h1>Comparaison Mono-thread vs Multi-thread</h1>
+                <table>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Mono</th>
+                    <th>Multi</th>
+                  </tr>
+                  <tr>
+                    <td>Débit moyen (req/s)</td>
+                    <td>{{ mono_throughput_mean|round(1) }}</td>
+                    <td>{{ multi_throughput_mean|round(1) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Débit max (req/s)</td>
+                    <td>{{ mono_throughput_max|round(1) }}</td>
+                    <td>{{ multi_throughput_max|round(1) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Latence P99 moyenne (ms)</td>
+                    <td>{{ mono_p99_mean|round(1) }}</td>
+                    <td>{{ multi_p99_mean|round(1) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Speedup multi / mono (débit moyen)</td>
+                    <td colspan="2">{{ speedup|round(2) }}x</td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+            """,
+            mono_throughput_mean=mono_stats["throughput_mean"],
+            mono_throughput_max=mono_stats["throughput_max"],
+            mono_p99_mean=mono_stats["p99_mean"],
+            multi_throughput_mean=multi_stats["throughput_mean"],
+            multi_throughput_max=multi_stats["throughput_max"],
+            multi_p99_mean=multi_stats["p99_mean"],
+            speedup=speedup,
+        )
+        return html
+
+    @app.route("/static/figures/<path:filename>")
+    def static_figures(filename):
+        return send_from_directory(FIG_DIR, filename)
+
+    @app.route("/api/results")
+    def api_results():
+        if df is None or df.empty:
+            return jsonify({"error": "no data"}), 500
+        return jsonify(df.to_dict(orient="records"))
+
+    return app
+
+
+def action_web():
+    """Lance le serveur Flask local."""
+    if not HAS_FLASK:
+        print_err("Flask n’est pas installé dans le venv Python.")
+        print_info("Installe-le depuis le dossier python/ :")
+        print("  source venv/bin/activate")
+        print("  pip install flask")
+        return
+
+    app = create_flask_app()
+    print_ok("Serveur Flask démarré sur http://127.0.0.1:5000")
+    print_info("Routes : /, /results, /graphs, /compare")
+    app.run(host="127.0.0.1", port=5000, debug=False)
+
+
+# =========================
+#  CLI INTERACTIVE
+# =========================
+
+def setup_autocomplete():
+    try:
+        import readline
+    except ImportError:
+        print_warn("readline non disponible : pas d’autocomplétion.")
+        return
+
+    def completer(text, state):
+        options = [c for c in COMMANDS if c.startswith(text)]
+        if state < len(options):
+            return options[state]
+        return None
+
+    readline.set_completer(completer)
+    readline.parse_and_bind("tab: complete")
+
+
+def print_help():
+    print(f"{BOLD}Commandes disponibles :{RESET}")
+    print("  help       → afficher cette aide")
+    print("  open       → ouvrir le dashboard HTML dans le navigateur")
+    print("  summary    → afficher un résumé des résultats")
+    print("  list-fig   → lister les figures PNG/SVG")
+    print("  export     → exporter dashboard + figures dans un ZIP")
+    print("  web        → lancer le serveur Flask (http://127.0.0.1:5000)")
+    print("  quit/exit  → quitter la CLI")
+
+
+def main_interactive():
+    print(f"{BOLD}{GREEN}=== Serveur haute performance – Dashboard CLI ==={RESET}")
+    print(f"Projet : {PROJECT_ROOT}")
+    print_help()
+    setup_autocomplete()
+
+    while True:
+        try:
+            cmd = input(f"{CYAN}dashboard> {RESET}").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+
+        if not cmd:
+            continue
+
+        if cmd in ("quit", "exit"):
+            break
+        elif cmd == "help":
+            print_help()
+        elif cmd == "open":
+            action_open_dashboard()
+        elif cmd == "summary":
+            action_summary()
+        elif cmd == "list-fig":
+            action_list_figures()
+        elif cmd == "export":
+            action_export_figures()
+        elif cmd == "web":
+            action_web()
+        else:
+            print_warn(f"Commande inconnue : {cmd}")
+            print("Tape 'help' pour la liste des commandes.")
+
+    print_ok("CLI fermée. À bientôt.")
+
+
+# =========================
+#  POINT D’ENTRÉE
+# =========================
+
+if __name__ == "__main__":
+    # Mode simple en ligne de commande :
+    #   python3 open_dashboard.py open
+    #   python3 open_dashboard.py web
+    #   python3 open_dashboard.py summary
+    if len(sys.argv) > 1:
+        action = sys.argv[1]
+        if action == "open":
+            action_open_dashboard()
+        elif action == "summary":
+            action_summary()
+        elif action == "list-fig":
+            action_list_figures()
+        elif action == "export":
+            action_export_figures()
+        elif action == "web":
+            action_web()
+        elif action in ("help", "-h", "--help"):
+            print_help()
+        else:
+            print_err(f"Commande inconnue : {action}")
+            print_help()
+            sys.exit(1)
+    else:
+        # Sinon : mode interactif complet
+        main_interactive()
+
+
+
+# ================================================================================
+
+### FICHIER : python/plot_results.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+OUTPUT = ROOT / "figures"
+OUTPUT.mkdir(exist_ok=True)
+
+
+def load_results():
+    df = pd.read_excel(ROOT / "results.xlsx")
+    mono = df[df.server == "mono"]
+    multi = df[df.server == "multi"]
+    return mono, multi
+
+
+def save_figure(name: str):
+    png_path = OUTPUT / f"{name}.png"
+    svg_path = OUTPUT / f"{name}.svg"
+    plt.tight_layout()
+    plt.savefig(png_path, dpi=160)
+    plt.savefig(svg_path)
+    plt.close()
+    print(f"[PLOT] {png_path} + {svg_path}")
+
+
+def graph_throughput(mono, multi):
+    plt.figure(figsize=(8, 5))
+    plt.plot(mono.clients, mono.throughput_rps, marker="o", label="Mono-thread")
+    plt.plot(multi.clients, multi.throughput_rps, marker="o", label="Multi-thread")
+    plt.xlabel("Clients")
+    plt.ylabel("Débit (req/s)")
+    plt.title("Débit VS nombre de clients")
+    plt.legend()
+    save_figure("1-throughput")
+
+
+def graph_latency_p99(mono, multi):
+    plt.figure(figsize=(8, 5))
+    plt.plot(mono.clients, mono.p99, marker="o", label="Mono-thread")
+    plt.plot(multi.clients, multi.p99, marker="o", label="Multi-thread")
+    plt.xlabel("Clients")
+    plt.ylabel("Latence P99 (ms)")
+    plt.title("Latence P99 VS nombre de clients")
+    plt.legend()
+    save_figure("2-latency_p99")
+
+
+def graph_cpu(mono, multi):
+    plt.figure(figsize=(8, 5))
+    plt.plot(mono.clients, mono.cpu_mean, marker="o", label="Mono-thread")
+    plt.plot(multi.clients, multi.cpu_mean, marker="o", label="Multi-thread")
+    plt.xlabel("Clients")
+    plt.ylabel("CPU moyen (%)")
+    plt.title("CPU moyen")
+    plt.legend()
+    save_figure("3-cpu")
+
+
+def graph_memory(mono, multi):
+    plt.figure(figsize=(8, 5))
+    plt.plot(mono.clients, mono.mem_mean, marker="o", label="Mono-thread")
+    plt.plot(multi.clients, multi.mem_mean, marker="o", label="Multi-thread")
+    plt.xlabel("Clients")
+    plt.ylabel("Mémoire (MB)")
+    plt.title("Mémoire RSS")
+    plt.legend()
+    save_figure("4-memory")
+
+
+def graph_speedup(mono, multi):
+    plt.figure(figsize=(8, 5))
+    speedup = multi.throughput_rps.values / mono.throughput_rps.values
+    plt.plot(mono.clients, speedup, marker="o")
+    plt.axhline(1.0)
+    plt.xlabel("Clients")
+    plt.ylabel("Speedup (multi/mono)")
+    plt.title("Speedup multi-thread")
+    save_figure("5-speedup")
+
+
+def graph_saturation(mono, multi):
+    plt.figure(figsize=(8, 5))
+    plt.plot(mono.clients, mono.cpu_mean, marker="o", linestyle="--", label="Mono-thread")
+    plt.plot(multi.clients, multi.cpu_mean, marker="o", linestyle="--", label="Multi-thread")
+    plt.xlabel("Clients")
+    plt.ylabel("CPU (%)")
+    plt.title("Saturation CPU")
+    plt.legend()
+    save_figure("6-saturation")
+
+
+def main():
+    mono, multi = load_results()
+    graph_throughput(mono, multi)
+    graph_latency_p99(mono, multi)
+    graph_cpu(mono, multi)
+    graph_memory(mono, multi)
+    graph_speedup(mono, multi)
+    graph_saturation(mono, multi)
+    print("[PLOT] Graphiques PNG + SVG générés dans python/figures/")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : python/test_client.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import socket
+import struct
+
+
+def main():
+    host = "127.0.0.1"
+    port = 5050
+    number = 7
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((host, port))
+        s.sendall(struct.pack("!i", number))
+        result_raw = s.recv(4)
+        ts_raw = s.recv(8)
+        result = struct.unpack("!i", result_raw)[0]
+        ts = struct.unpack("!q", ts_raw)[0]
+        print(f"Nombre envoyé : {number}")
+        print(f"Résultat reçu : {result}")
+        print(f"Timestamp serveur (µs) : {ts}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : rebuild_project.py
+# ------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Script officiel de reconstruction du projet.
+- Régénère les fichiers HTTP (http.c/.h + serveurs HTTP)
+- Ne touche pas aux serveurs TCP ni à la queue
+- Lance : create_http_files.py, make clean, make -j, make test
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+
+def run(cmd: list[str], cwd: Path | None = None) -> None:
+    print(f"\n➡️  {' '.join(cmd)}")
+    try:
+        subprocess.run(cmd, cwd=cwd, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Commande échouée (code {e.returncode}) : {' '.join(cmd)}")
+        sys.exit(e.returncode)
+
+
+def main() -> None:
+    print("🔄 Reconstruction du projet TCP + HTTP…")
+
+    create_http = ROOT / "create_http_files.py"
+    if not create_http.exists():
+        print("❌ create_http_files.py introuvable !")
+        sys.exit(1)
+
+    # 1) Regénération fichiers HTTP
+    run(["python3", str(create_http)], cwd=ROOT)
+
+    # 2) Compilation
+    run(["make", "clean"], cwd=ROOT)
+    run(["make", "-j"], cwd=ROOT)
+
+    # 3) Tests
+    run(["make", "test"], cwd=ROOT)
+
+    print("\n🎉 Projet reconstruit avec succès ! Aucun fichier critique écrasé.\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/clean_project.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "──────────────────────────────────────────────"
+echo "🧹 Nettoyage projet (C + logs + figures)"
+echo "──────────────────────────────────────────────"
+
+cd "$PROJECT_ROOT"
+
+make clean || true
+rm -rf python/figures/*.png python/figures/*.svg || true
+rm -f python/results.json python/results.xlsx || true
+
+echo "✔ Nettoyage terminé."
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/kill_servers.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "──────────────────────────────────────────────"
+echo "🛑 Arrêt des serveurs C"
+echo "──────────────────────────────────────────────"
+
+pkill serveur_mono       2>/dev/null || true
+pkill serveur_multi      2>/dev/null || true
+pkill serveur_mono_http  2>/dev/null || true
+pkill serveur_multi_http 2>/dev/null || true
+
+echo "✔ Tous les serveurs ont été arrêtés (si présents)."
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/open_dashboard.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PY_DIR="${PROJECT_ROOT}/python"
+DASHBOARD="${PY_DIR}/dashboard.html"
+RESULTS_JSON="${PY_DIR}/results.json"
+LOG_DIR="${PROJECT_ROOT}/logs"
+LOG_FILE="${LOG_DIR}/dashboard_open.log"
+
+mkdir -p "$LOG_DIR"
+
+timestamp() { date +"%Y-%m-%d %H:%M:%S"; }
+log() { echo "[$(timestamp)] $*" | tee -a "$LOG_FILE"; }
+
+echo "──────────────────────────────────────"
+echo "🖥 Ouverture Dashboard"
+echo "──────────────────────────────────────"
+
+# venv global
+if [[ -d "${PROJECT_ROOT}/venv" ]]; then
+    log "🐍 Activation du venv global…"
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/venv/bin/activate"
+else
+    log "❌ venv introuvable. Lance ./setup.sh."
+    exit 1
+fi
+
+if [[ ! -f "$RESULTS_JSON" ]]; then
+    log "❌ python/results.json introuvable. Lance d'abord ./scripts/run_all.sh."
+    exit 1
+fi
+
+if [[ ! -f "$DASHBOARD" ]]; then
+    log "ℹ Dashboard absent — génération via export_html.py"
+    (cd "$PY_DIR" && python3 export_html.py)
+fi
+
+log "🖥 Ouverture : $DASHBOARD"
+xdg-open "$DASHBOARD" >/dev/null 2>&1 || \
+    log "⚠ Impossible d'ouvrir automatiquement. Fichier : $DASHBOARD"
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/run_all.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PY_DIR="${PROJECT_ROOT}/python"
+LOG_DIR="${PROJECT_ROOT}/logs"
+LOG_FILE="${LOG_DIR}/auto_run.log"
+
+mkdir -p "$LOG_DIR"
+
+timestamp() { date +"%Y-%m-%d %H:%M:%S"; }
+log() { echo "[$(timestamp)] $*" | tee -a "$LOG_FILE"; }
+
+echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
+echo "🚀 Pipeline complet (build + bench + plots)"     | tee -a "$LOG_FILE"
+echo "Racine : ${PROJECT_ROOT}"                         | tee -a "$LOG_FILE"
+echo "──────────────────────────────────────────────" | tee -a "$LOG_FILE"
+
+# venv global
+if [[ -d "${PROJECT_ROOT}/venv" ]]; then
+    log "🐍 Activation du venv global…"
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/venv/bin/activate"
+else
+    log "❌ venv introuvable. Lance ./setup.sh en premier."
+    exit 1
+fi
+
+log "🧱 Compilation C…"
+(
+    cd "$PROJECT_ROOT"
+    make clean
+    make -j
+)
+
+log "🔥 Exécution du benchmark Python…"
+(
+    cd "$PY_DIR"
+    python3 benchmark.py
+    python3 plot_results.py
+    python3 export_html.py
+)
+
+log "✔ Pipeline terminé. Résultats dans python/results.* et python/figures/."
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/run_servers.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BIN_DIR="${PROJECT_ROOT}/bin"
+LOG_DIR="${PROJECT_ROOT}/logs"
+
+mkdir -p "$LOG_DIR"
+
+echo "──────────────────────────────────────────────"
+echo "🚀 Lancement manuel des serveurs C"
+echo "──────────────────────────────────────────────"
+
+# Mono TCP
+echo "▶ serveur_mono (TCP 5050)…"
+"${BIN_DIR}/serveur_mono"  > "${LOG_DIR}/serveur_mono.log"  2>&1 &
+
+# Multi TCP
+echo "▶ serveur_multi (TCP 5051)…"
+"${BIN_DIR}/serveur_multi" > "${LOG_DIR}/serveur_multi.log" 2>&1 &
+
+echo "ℹ Utiliser make kill_servers ou ./scripts/kill_servers.sh pour arrêter."
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/run_tests.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "──────────────────────────────────────────────"
+echo "🧪 Exécution des tests unitaires C"
+echo "──────────────────────────────────────────────"
+
+cd "$PROJECT_ROOT"
+make test
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/start_all.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+echo "──────────────────────────────────────────────"
+echo "🚀 Lancement pipeline complet — $(date)"
+echo "Racine du projet : ${PROJECT_ROOT}"
+echo "──────────────────────────────────────────────"
+
+"${PROJECT_ROOT}/scripts/run_all.sh"
+
+echo "📊 Pour visualiser les résultats :"
+echo "   ➜ ./scripts/open_dashboard.sh"
+echo "   ➜ ./scripts/view_results.sh"
+
+
+
+# ================================================================================
+
+### FICHIER : scripts/view_results.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PY_DIR="${PROJECT_ROOT}/python"
+
+echo "──────────────────────────────────────────────"
+echo "📊 Inspection rapide des résultats"
+echo "──────────────────────────────────────────────"
+
+cd "$PY_DIR"
+
+if [[ ! -f "results.xlsx" ]]; then
+    echo "❌ results.xlsx introuvable. Lance ./scripts/run_all.sh."
+    exit 1
+fi
+
+if [[ -d "${PROJECT_ROOT}/venv" ]]; then
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/venv/bin/activate"
+fi
+
+python3 - << 'EOF'
+import pandas as pd
+
+df = pd.read_excel("results.xlsx")
+print("\nColonnes disponibles :")
+print(df.columns.tolist())
+
+print("\nAperçu (5 premières lignes) :")
+print(df.head())
+
+print("\nRésumé par type de serveur :")
+print(df.groupby("server")[["throughput_rps","cpu_mean","mem_mean"]].mean())
+EOF
+
+
+
+# ================================================================================
+
+### FICHIER : setup.sh
+# ------------------------------------------------------------
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR"
+
+echo "──────────────────────────────────────────────"
+echo "🚀 Setup du projet Serveur TCP/HTTP (C + Python)"
+echo "Racine : ${PROJECT_ROOT}"
+echo "──────────────────────────────────────────────"
+
+# 1) Vérif outils de base
+echo "🔍 Vérification outils système..."
+for cmd in gcc make python3; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "❌ Commande manquante : $cmd"
+        echo "   → Sur Ubuntu : sudo apt install -y build-essential python3 python3-venv python3-pip make git curl netcat"
+        exit 1
+    fi
+done
+echo "✔ Outils système OK."
+
+# 2) Création/MAJ du venv global
+if [[ ! -d "${PROJECT_ROOT}/venv" ]]; then
+    echo "🌱 Création du venv Python global…"
+    python3 -m venv "${PROJECT_ROOT}/venv"
+fi
+
+echo "🐍 Activation du venv…"
+# shellcheck disable=SC1091
+source "${PROJECT_ROOT}/venv/bin/activate"
+
+echo "📦 Installation des dépendances Python…"
+pip install --upgrade pip
+pip install -r "${PROJECT_ROOT}/python/requirements.txt"
+
+# 3) Regénération fichiers HTTP + build + tests
+echo "🛠 Reconstruction C (HTTP + TCP)…"
+python3 "${PROJECT_ROOT}/rebuild_project.py"
+
+echo "🎉 Setup terminé avec succès."
+echo "   ➜ Pour lancer le pipeline complet : ./scripts/start_all.sh"
+
+
+
+# ================================================================================
+
+### FICHIER : src/http.c
+# ------------------------------------------------------------
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include "http.h"
+
+void parse_http_request(const char *req, char *method, char *path, char *query) {
+    char line[1024];
+    const char *end = strpbrk(req, "\r\n");
+
+    if (end) {
+        size_t len = end - req;
+        if (len >= sizeof(line)) len = sizeof(line) - 1;
+        memcpy(line, req, len);
+        line[len] = '\0';
+    } else {
+        strncpy(line, req, sizeof(line) - 1);
+        line[sizeof(line) - 1] = '\0';
+    }
+
+    char url[512] = {0};
+    sscanf(line, "%15s %511s", method, url);
+
+    char *qmark = strchr(url, '?');
+    if (qmark) {
+        strcpy(query, qmark + 1);
+        *qmark = '\0';
+    } else {
+        query[0] = '\0';
+    }
+
+    strcpy(path, url);
+}
+
+void send_http_response(int client_fd, const char *status,
+                        const char *content_type, const char *body) {
+    char header[4096];
+    size_t body_len = strlen(body);
+
+    snprintf(header, sizeof(header),
+        "HTTP/1.1 %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %zu\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        status, content_type, body_len
+    );
+
+    send(client_fd, header, strlen(header), 0);
+    send(client_fd, body, body_len, 0);
+}
+
+
+# ================================================================================
+
+### FICHIER : src/http.h
+# ------------------------------------------------------------
+#ifndef HTTP_H
+#define HTTP_H
+
+void parse_http_request(const char *req, char *method, char *path, char *query);
+void send_http_response(int client_fd, const char *status,
+                        const char *content_type, const char *body);
+
+#endif
+
+
+# ================================================================================
+
+### FICHIER : src/queue.c
+# ------------------------------------------------------------
+#include "queue.h"
+#include <stdlib.h>
+
+void queue_init(queue_t *q, size_t size_max) {
+    q->head = q->tail = NULL;
+    q->size = 0;
+    q->size_max = size_max;  // 0 = illimité
+    q->shutdown = false;
+    pthread_mutex_init(&q->mutex, NULL);
+    pthread_cond_init(&q->not_empty, NULL);
+    pthread_cond_init(&q->not_full, NULL);
+}
+
+int queue_push(queue_t *q, void *data) {
+    pthread_mutex_lock(&q->mutex);
+
+    while (!q->shutdown &&
+           q->size_max > 0 &&
+           q->size >= q->size_max) {
+        pthread_cond_wait(&q->not_full, &q->mutex);
+    }
+
+    if (q->shutdown) {
+        pthread_mutex_unlock(&q->mutex);
+        return -1;
+    }
+
+    queue_node_t *node = (queue_node_t*)malloc(sizeof(queue_node_t));
+    if (!node) {
+        pthread_mutex_unlock(&q->mutex);
+        return -1;
+    }
+    node->data = data;
+    node->next = NULL;
+
+    if (q->tail)
+        q->tail->next = node;
+    else
+        q->head = node;
+
+    q->tail = node;
+    q->size++;
+
+    pthread_cond_signal(&q->not_empty);
+    pthread_mutex_unlock(&q->mutex);
+    return 0;
+}
+
+void *queue_pop(queue_t *q) {
+    pthread_mutex_lock(&q->mutex);
+
+    while (q->size == 0 && !q->shutdown) {
+        pthread_cond_wait(&q->not_empty, &q->mutex);
+    }
+
+    if (q->shutdown && q->size == 0) {
+        pthread_mutex_unlock(&q->mutex);
+        return NULL;
+    }
+
+    queue_node_t *node = q->head;
+    q->head = node->next;
+    if (!q->head)
+        q->tail = NULL;
+
+    q->size--;
+    void *data = node->data;
+    free(node);
+
+    if (q->size_max == 0 || q->size < q->size_max) {
+        pthread_cond_signal(&q->not_full);
+    }
+
+    pthread_mutex_unlock(&q->mutex);
+    return data;
+}
+
+void queue_shutdown(queue_t *q) {
+    pthread_mutex_lock(&q->mutex);
+    q->shutdown = true;
+    pthread_cond_broadcast(&q->not_empty);
+    pthread_cond_broadcast(&q->not_full);
+    pthread_mutex_unlock(&q->mutex);
+}
+
+void queue_destroy(queue_t *q) {
+    pthread_mutex_lock(&q->mutex);
+    queue_node_t *cur = q->head;
+    while (cur) {
+        queue_node_t *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+    pthread_mutex_unlock(&q->mutex);
+
+    pthread_mutex_destroy(&q->mutex);
+    pthread_cond_destroy(&q->not_empty);
+    pthread_cond_destroy(&q->not_full);
+}
+
+
+# ================================================================================
+
+### FICHIER : src/queue.h
+# ------------------------------------------------------------
+#ifndef QUEUE_H
+#define QUEUE_H
+
+#include <pthread.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+typedef struct queue_node {
+    void *data;
+    struct queue_node *next;
+} queue_node_t;
+
+/**
+ * Queue FIFO thread-safe, bornée.
+ * - mutex + condition variables not_empty / not_full
+ * - shutdown permet de réveiller tous les threads en attente.
+ */
+typedef struct queue {
+    queue_node_t *head;
+    queue_node_t *tail;
+    pthread_mutex_t mutex;
+    pthread_cond_t not_empty;
+    pthread_cond_t not_full;
+    bool shutdown;
+    size_t size;
+    size_t size_max;  // capacité maximale (0 = illimitée)
+} queue_t;
+
+void queue_init(queue_t *q, size_t size_max);
+int queue_push(queue_t *q, void *data);
+void *queue_pop(queue_t *q);
+void queue_shutdown(queue_t *q);
+void queue_destroy(queue_t *q);
+
+#endif
+
+
+# ================================================================================
+
+### FICHIER : src/serveur_mono.c
+# ------------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <math.h>
+#include <signal.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
+
+#define PORT 5050
+#define BACKLOG 10
+
+static int server_fd = -1;
+
+static uint64_t htonll(uint64_t x) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    return __builtin_bswap64(x);
+#else
+    return x;
+#endif
+}
+
+static void traitement_lourd(void) {
+    double x = 0.0;
+    for (int i = 0; i < 100000; i++)
+        x += sqrt(i);
+    (void)x;
+    usleep((rand() % 90 + 10) * 1000);
+}
+
+static int64_t timestamp_us(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (int64_t)tv.tv_sec * 1000000LL + tv.tv_usec;
+}
+
+static void handle_sigint(int sig) {
+    (void)sig;
+    printf("\n[MONO] Arrêt via Ctrl+C...\n");
+    if (server_fd >= 0) close(server_fd);
+    exit(0);
+}
+
+int main(void) {
+    signal(SIGINT, handle_sigint);
+    srand((unsigned)time(NULL));
+
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) { perror("socket"); exit(EXIT_FAILURE); }
+
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        perror("setsockopt");
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind"); exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, BACKLOG) < 0) {
+        perror("listen"); exit(EXIT_FAILURE);
+    }
+
+    printf("[MONO] Serveur mono-thread sur port %d\n", PORT);
+
+    for (;;) {
+        struct sockaddr_in client;
+        socklen_t len = sizeof(client);
+        int client_fd = accept(server_fd, (struct sockaddr*)&client, &len);
+        if (client_fd < 0) {
+            perror("accept");
+            continue;
+        }
+
+        int32_t number_net;
+        ssize_t r = recv(client_fd, &number_net, sizeof(number_net), 0);
+        if (r != (ssize_t)sizeof(number_net)) {
+            close(client_fd);
+            continue;
+        }
+
+        int32_t number = ntohl(number_net);
+        traitement_lourd();
+
+        int32_t result_net = htonl(number * number);
+        int64_t ts = timestamp_us();
+        uint64_t ts_net = htonll((uint64_t)ts);
+
+        ssize_t s1 = send(client_fd, &result_net, sizeof(result_net), 0);
+        ssize_t s2 = send(client_fd, &ts_net, sizeof(ts_net), 0);
+        (void)s1; (void)s2;
+
+        close(client_fd);
+    }
+}
+
+
+# ================================================================================
+
+### FICHIER : src/serveur_mono_http.c
+# ------------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include "http.h"
+
+#define PORT 5050
+
+int main(void) {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        perror("socket");
+        return EXIT_FAILURE;
+    }
+
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt");
+    }
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(PORT);
+    addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        close(server_fd);
+        return EXIT_FAILURE;
+    }
+
+    if (listen(server_fd, 10) < 0) {
+        perror("listen");
+        close(server_fd);
+        return EXIT_FAILURE;
+    }
+
+    printf("Serveur HTTP mono-thread sur port %d...\n", PORT);
+
+    char buffer[4096];
+
+    for (;;) {
+        int client_fd = accept(server_fd, NULL, NULL);
+        if (client_fd < 0) {
+            perror("accept");
+            continue;
+        }
+
+        int n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) {
+            close(client_fd);
+            continue;
+        }
+        buffer[n] = '\0';
+
+        char method[16] = {0};
+        char path[256]  = {0};
+        char query[256] = {0};
+
+        parse_http_request(buffer, method, path, query);
+        printf("→ METHOD=%s | PATH=%s | QUERY=%s\n", method, path, query);
+
+        if (strcmp(path, "/hello") == 0) {
+            send_http_response(client_fd, "200 OK", "application/json",
+                               "{\"msg\":\"Bonjour depuis mono-thread\"}");
+        } else {
+            send_http_response(client_fd, "404 Not Found", "text/plain",
+                               "404 NOT FOUND");
+        }
+
+        close(client_fd);
+    }
+
+    return 0;
+}
+
+
+# ================================================================================
+
+### FICHIER : src/serveur_multi.c
+# ------------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <math.h>
+#include <signal.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
+#include <pthread.h>
+#include "queue.h"
+
+#define PORT 5051
+#define BACKLOG 50
+#define WORKER_COUNT 8
+#define QUEUE_CAPACITY 128
+
+static int server_fd = -1;
+static queue_t job_queue;
+static volatile sig_atomic_t running = 1;
+
+static uint64_t htonll(uint64_t x) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    return __builtin_bswap64(x);
+#else
+    return x;
+#endif
+}
+
+static void traitement_lourd(void) {
+    double x = 0.0;
+    for (int i = 0; i < 100000; i++)
+        x += sqrt(i);
+    (void)x;
+    usleep((rand() % 90 + 10) * 1000);
+}
+
+static int64_t timestamp_us(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (int64_t)tv.tv_sec * 1000000LL + tv.tv_usec;
+}
+
+static void handle_sigint(int sig) {
+    (void)sig;
+    printf("\n[MULTI] Arrêt via Ctrl+C...\n");
+    running = 0;
+    if (server_fd >= 0) close(server_fd);
+    queue_shutdown(&job_queue);
+}
+
+static void *worker_func(void *arg) {
+    (void)arg;
+    for (;;) {
+        int *fd_ptr = (int*)queue_pop(&job_queue);
+        if (!fd_ptr) {
+            if (!running)
+                break;
+            else
+                continue;
+        }
+        int client_fd = *fd_ptr;
+        free(fd_ptr);
+
+        int32_t number_net;
+        ssize_t r = recv(client_fd, &number_net, sizeof(number_net), 0);
+        if (r != (ssize_t)sizeof(number_net)) {
+            close(client_fd);
+            continue;
+        }
+
+        int32_t number = ntohl(number_net);
+        traitement_lourd();
+
+        int32_t result_net = htonl(number * number);
+        int64_t ts = timestamp_us();
+        uint64_t ts_net = htonll((uint64_t)ts);
+
+        ssize_t s1 = send(client_fd, &result_net, sizeof(result_net), 0);
+        ssize_t s2 = send(client_fd, &ts_net, sizeof(ts_net), 0);
+        (void)s1; (void)s2;
+
+        close(client_fd);
+    }
+    return NULL;
+}
+
+int main(void) {
+    signal(SIGINT, handle_sigint);
+    srand((unsigned)time(NULL));
+
+    queue_init(&job_queue, QUEUE_CAPACITY);
+
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) { perror("socket"); exit(EXIT_FAILURE); }
+
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        perror("setsockopt");
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind"); exit(EXIT_FAILURE);
+    }
+    if (listen(server_fd, BACKLOG) < 0) {
+        perror("listen"); exit(EXIT_FAILURE);
+    }
+
+    printf("[MULTI] Serveur multi-thread sur port %d\n", PORT);
+
+    pthread_t workers[WORKER_COUNT];
+    for (int i = 0; i < WORKER_COUNT; i++) {
+        int err = pthread_create(&workers[i], NULL, worker_func, NULL);
+        if (err != 0) {
+            fprintf(stderr, "pthread_create error\n");
+            running = 0;
+            queue_shutdown(&job_queue);
+            for (int j = 0; j < i; j++)
+                pthread_join(workers[j], NULL);
+            close(server_fd);
+            queue_destroy(&job_queue);
+            return EXIT_FAILURE;
+        }
+    }
+
+    while (running) {
+        struct sockaddr_in client;
+        socklen_t len = sizeof(client);
+        int client_fd = accept(server_fd, (struct sockaddr*)&client, &len);
+        if (client_fd < 0) {
+            if (!running) break;
+            perror("accept");
+            continue;
+        }
+
+        int *fd_ptr = (int*)malloc(sizeof(int));
+        if (!fd_ptr) {
+            fprintf(stderr, "malloc fd_ptr failed\n");
+            close(client_fd);
+            continue;
+        }
+        *fd_ptr = client_fd;
+
+        if (queue_push(&job_queue, fd_ptr) < 0) {
+            close(client_fd);
+            free(fd_ptr);
+            break;
+        }
+    }
+
+    running = 0;
+    queue_shutdown(&job_queue);
+
+    for (int i = 0; i < WORKER_COUNT; i++)
+        pthread_join(workers[i], NULL);
+
+    queue_destroy(&job_queue);
+    return 0;
+}
+
+
+# ================================================================================
+
+### FICHIER : src/serveur_multi_http.c
+# ------------------------------------------------------------
+\
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <unistd.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
+    #include <sys/socket.h>
+
+    #include "queue.h"
+    #include "http.h"
+
+    #define HTTP_PORT    8081      /* Port HTTP multi-thread (distinct du TCP) */
+    #define WORKERS      8
+    #define BACKLOG      64
+    #define BUFFER_SIZE  4096
+
+    typedef struct {
+        int client_fd;
+    } job_t;
+
+    static queue_t job_queue;
+
+    /**
+     * Thread worker : dépile un job de la queue, lit la requête HTTP,
+     * route la requête et envoie une réponse appropriée.
+     */
+    static void* worker(void *arg) {
+        (void)arg;
+
+        for (;;) {
+            job_t *job = (job_t*) queue_pop(&job_queue);
+            if (!job) {
+                /* Si shutdown() a été appelé, queue_pop peut retourner NULL */
+                continue;
+            }
+
+            char buffer[BUFFER_SIZE];
+            ssize_t n = recv(job->client_fd, buffer, sizeof(buffer) - 1, 0);
+            if (n <= 0) {
+                close(job->client_fd);
+                free(job);
+                continue;
+            }
+            buffer[n] = '\0';
+
+            printf("\n==== HTTP REQUEST (multi) ====\n%.*s\n", (int)n, buffer);
+
+            char method[16] = {0};
+            char path[256]  = {0};
+            char query[256] = {0};
+
+            parse_http_request(buffer, method, path, query);
+            printf("[MULTI_HTTP] METHOD='%s' | PATH='%s' | QUERY='%s'\n",
+                   method, path, query);
+
+            /* Routage très simple */
+            if (strcmp(path, "/hello") == 0) {
+                const char *body = "{\"msg\":\"Hello from multi-thread HTTP server\"}";
+                send_http_response(job->client_fd,
+                                   "200 OK",
+                                   "application/json",
+                                   body);
+            }
+            else if (strcmp(path, "/") == 0) {
+                const char *body =
+                    "<html><body>"
+                    "<h1>Multi-thread HTTP Server</h1>"
+                    "<p>Bienvenue sur le serveur HTTP multi-thread.</p>"
+                    "</body></html>";
+                send_http_response(job->client_fd,
+                                   "200 OK",
+                                   "text/html",
+                                   body);
+            }
+            else {
+                send_http_response(job->client_fd,
+                                   "404 Not Found",
+                                   "text/plain",
+                                   "404 NOT FOUND");
+            }
+
+            close(job->client_fd);
+            free(job);
+        }
+
+        return NULL; /* important pour éviter le warning GCC */
+    }
+
+    int main(void) {
+        queue_init(&job_queue, 128);
+
+        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd < 0) {
+            perror("socket");
+            return EXIT_FAILURE;
+        }
+
+        int opt = 1;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            perror("setsockopt SO_REUSEADDR");
+        }
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family      = AF_INET;
+        addr.sin_port        = htons(HTTP_PORT);
+        addr.sin_addr.s_addr = INADDR_ANY;
+
+        if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            perror("bind");
+            close(server_fd);
+            return EXIT_FAILURE;
+        }
+
+        if (listen(server_fd, BACKLOG) < 0) {
+            perror("listen");
+            close(server_fd);
+            return EXIT_FAILURE;
+        }
+
+        printf("Serveur HTTP multi-thread en écoute sur port %d...\n", HTTP_PORT);
+
+        pthread_t workers[WORKERS];
+        for (int i = 0; i < WORKERS; i++) {
+            if (pthread_create(&workers[i], NULL, worker, NULL) != 0) {
+                perror("pthread_create");
+                close(server_fd);
+                return EXIT_FAILURE;
+            }
+        }
+
+        for (;;) {
+            int client_fd = accept(server_fd, NULL, NULL);
+            if (client_fd < 0) {
+                perror("accept");
+                continue;
+            }
+
+            job_t *job = (job_t*)malloc(sizeof(job_t));
+            if (!job) {
+                fprintf(stderr, "malloc failed\n");
+                close(client_fd);
+                continue;
+            }
+            job->client_fd = client_fd;
+
+            if (queue_push(&job_queue, job) < 0) {
+                fprintf(stderr, "queue_push failed\n");
+                close(client_fd);
+                free(job);
+                continue;
+            }
+        }
+
+        /* Code théoriquement non atteint (serveur infini) */
+        close(server_fd);
+        queue_destroy(&job_queue);
+        return EXIT_SUCCESS;
+    }
+
+
+# ================================================================================
+
+### FICHIER : tests/test_queue.c
+# ------------------------------------------------------------
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "queue.h"
+
+#define NB_ITEMS 1000
+
+typedef struct {
+    queue_t *q;
+    int count;
+} thread_arg_t;
+
+void *producer(void *arg) {
+    thread_arg_t *ctx = (thread_arg_t*)arg;
+    for (int i = 0; i < ctx->count; i++) {
+        int *v = (int*)malloc(sizeof(int));
+        *v = i;
+        if (queue_push(ctx->q, v) < 0) {
+            fprintf(stderr, "[TEST] producer: queue_push failed\n");
+            free(v);
+            break;
+        }
+    }
+    return NULL;
+}
+
+void *consumer(void *arg) {
+    thread_arg_t *ctx = (thread_arg_t*)arg;
+    int received = 0;
+    for (;;) {
+        int *v = (int*)queue_pop(ctx->q);
+        if (!v) break;
+        received++;
+        free(v);
+    }
+    printf("[TEST] consumer received %d items\n", received);
+    return NULL;
+}
+
+int main(void) {
+    queue_t q;
+    queue_init(&q, 128);
+
+    pthread_t prod, cons;
+    thread_arg_t arg = { .q = &q, .count = NB_ITEMS };
+
+    if (pthread_create(&prod, NULL, producer, &arg) != 0) {
+        perror("pthread_create producer");
+        return EXIT_FAILURE;
+    }
+    if (pthread_create(&cons, NULL, consumer, &arg) != 0) {
+        perror("pthread_create consumer");
+        return EXIT_FAILURE;
+    }
+
+    pthread_join(prod, NULL);
+    queue_shutdown(&q);
+    pthread_join(cons, NULL);
+    queue_destroy(&q);
+    printf("[TEST] test_queue terminé.\n");
+    return EXIT_SUCCESS;
+}
+
+
+# ================================================================================
+
