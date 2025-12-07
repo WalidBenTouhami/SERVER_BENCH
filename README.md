@@ -511,6 +511,6 @@ Voir documentation détaillée : [docs/CHALLENGES.md](docs/CHALLENGES.md)
 # 📄 Licence
 
 ```
-MIT License — usage académique et professionnel autorisé
+MIT License — Seulement l'usage académique est autorisé!
 ```
 
