@@ -368,19 +368,19 @@ server_project/
 
 ## UML 1 — Architecture globale
 
-![UML Architecture](docs/uml_architecture.png)
+![UML Architecture](docs/uml/uml_architecture.png)
 
 ---
 
 ## UML 2 — Queue FIFO Thread-Safe
 
-![UML Queue FIFO](docs/uml_queue.png)
+![UML Queue FIFO](docs/uml/uml_queue.png)
 
 ---
 
 ## UML 3 — Multi-threading (Workers & Dispatcher)
 
-![UML Threads](docs/uml_threads.png)
+![UML Threads](docs/uml/uml_threads.png)
 
 ---
 
