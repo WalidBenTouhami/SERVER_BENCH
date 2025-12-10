@@ -1,0 +1,25 @@
+@startuml
+title Séquence – Serveur HTTP Mono-thread (serveur_mono_http.c)
+
+actor Client
+participant "serveur_mono_http" as S
+participant "http.c\n(parse)" as H
+
+Client -> S : TCP connect()
+Client -> S : HTTP GET /path
+S -> H : parse_http_request()
+H --> S : method, path, query
+
+alt path = "/hello"
+    S -> Client : HTTP/1.1 200 OK\n{ "msg": ... }
+else path = "/time"
+    S -> Client : HTTP/1.1 200 OK\n{ "server_time": ... }
+else path = "/stats"
+    S -> Client : HTTP/1.1 200 OK\n{ "stats": ... }
+else
+    S -> Client : HTTP/1.1 404 Not Found
+end
+
+S -> S : close(connection)
+
+@enduml
