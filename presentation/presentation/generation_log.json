@@ -1,0 +1,6 @@
+{"timestamp": 1765407205.553252, "event": "check", "status": "start", "detail": "V\u00e9rification d\u00e9pendances"}
+{"timestamp": 1765407205.5544448, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
+{"timestamp": 1765407232.458424, "event": "check", "status": "start", "detail": "V\u00e9rification d\u00e9pendances"}
+{"timestamp": 1765407232.459129, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
+{"timestamp": 1765407232.4592814, "event": "html_slides", "status": "start", "detail": "G\u00e9n\u00e9ration Reveal.js HTML"}
+{"timestamp": 1765407232.4595046, "event": "html_slides", "status": "ok", "detail": "Slides HTML g\u00e9n\u00e9r\u00e9es : /home/xpert/server_project/presentation/presentation/presentation_finale.html"}

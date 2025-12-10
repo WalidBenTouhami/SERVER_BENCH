@@ -1,35 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Génération automatique des backgrounds pour la présentation PowerPoint.
+Version PRO – dark mode + light mode + gradients modernes.
 
+Output :
+    presentation/backgrounds/bg_light.png
+    presentation/backgrounds/bg_dark.png
+"""
+
+from PIL import Image, ImageDraw, ImageFilter
+import os
 from pathlib import Path
 
-try:
-    from PIL import Image, ImageDraw
-except ImportError:
-    raise SystemExit(
-        "❌ Le module Pillow (PIL) est manquant.\n"
-        "   Installe-le dans le venv : pip install pillow"
-    )
+ROOT = Path(__file__).resolve().parent
+BG_DIR = ROOT / "presentation" / "backgrounds"
+BG_DIR.mkdir(parents=True, exist_ok=True)
 
-ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = ROOT / "presentation" / "backgrounds"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+WIDTH, HEIGHT = 1920, 1080
 
 
-def gen_background(color, name: str) -> None:
-    img = Image.new("RGB", (1920, 1080), color)
+def generate_gradient(color_top, color_bottom, output):
+    img = Image.new("RGB", (WIDTH, HEIGHT), color_top)
     draw = ImageDraw.Draw(img)
-    draw.text((50, 50), "Serveur Haute Performance", fill=(255, 255, 255))
-    out_path = OUTPUT_DIR / name
-    img.save(out_path)
-    print(f"✔ Background généré : {out_path}")
+
+    for y in range(HEIGHT):
+        ratio = y / HEIGHT
+        r = int(color_top[0] * (1 - ratio) + color_bottom[0] * ratio)
+        g = int(color_top[1] * (1 - ratio) + color_bottom[1] * ratio)
+        b = int(color_top[2] * (1 - ratio) + color_bottom[2] * ratio)
+        draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
+
+    img = img.filter(ImageFilter.GaussianBlur(1.2))
+    img.save(output, "PNG")
+    print(f"✔ Background généré → {output}")
 
 
-def main() -> None:
-    gen_background((10, 30, 60), "background_blue_engineer.png")
-    gen_background((20, 20, 20), "background_dark_tech.png")
-    gen_background((230, 230, 230), "background_white_clean.png")
-    print(f"✔ Tous les backgrounds ont été générés dans {OUTPUT_DIR}")
+def main():
+    print("\n=== GENERATE BACKGROUNDS ===")
+
+    generate_gradient((240, 240, 240), (200, 210, 220), BG_DIR / "bg_light.png")
+    generate_gradient((30, 30, 30), (10, 10, 10), BG_DIR / "bg_dark.png")
+
+    print("✔ Terminé ! Fonds Light/Dark disponibles.\n")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Présentation Serveur — EXTREME++</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css" id="theme">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+
+  <style>
+    #switch {
+        position: fixed;
+        top: 15px;
+        right: 20px;
+        padding: 6px 14px;
+        background: #333;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 9999;
+    }
+  </style>
+</head>
+
+<body>
+<div id="switch">Dark / Light</div>
+
+<div class="reveal">
+<div class="slides">
+
+<section><h1>Présentation Serveurs TCP/HTTP</h1><p>Version EXTREME++</p></section>
+<section><h2>Architecture</h2><img src="../docs/uml/uml_architecture.svg"></section>
+<section><h2>Queue FIFO</h2><img src="../docs/uml/uml_queue.svg"></section>
+<section><h2>Threads / Workers</h2><img src="../docs/uml/uml_threads.svg"></section>
+<section><h2>TCP Mono-thread</h2><img src="../docs/uml/uml_seq_tcp_monothread.svg"></section>
+<section><h2>TCP Multi-thread</h2><img src="../docs/uml/uml_seq_tcp_multithread.svg"></section>
+<section><h2>HTTP Mono-thread</h2><img src="../docs/uml/uml_seq_http_monothread.svg"></section>
+<section><h2>HTTP Multi-thread</h2><img src="../docs/uml/uml_seq_http_multithread.svg"></section>
+
+</div>
+</div>
+
+<script>
+Reveal.initialize();
+
+document.getElementById("switch").onclick = function() {
+    var theme = document.getElementById("theme");
+    if (theme.href.includes("black")) {
+        theme.href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css";
+    } else {
+        theme.href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css";
+    }
+};
+</script>
+
+</body>
+</html>

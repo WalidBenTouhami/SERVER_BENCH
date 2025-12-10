@@ -313,23 +313,19 @@ make run_multi_http
 make kill_servers
 
 # 📂 Arborescence du projet
-"""
+```
 server_project/
+.
 ├── src/
-├── python/
-├── docs/
-│   ├── CHALLENGES.md
-│   ├── uml/
-│   │   ├── generate_uml.py
-│   │   ├── uml_architecture.svg
-│   │   ├── uml_queue.svg
-│   │   ├── uml_threads.svg
-│   │   ├── uml_seq_tcp_monothread.svg
-│   │   ├── uml_seq_tcp_multithread.svg
-│   │   ├── uml_seq_http_monothread.svg
-│   │   ├── uml_seq_http_multithread.svg
-│   │   └── update_readme_uml.py
-"""
+   ├── http.c
+   ├── http.h
+   ├── queue.c
+   ├── queue.h
+   ├── serveur_mono.c
+   ├── serveur_mono_http.c
+   ├── serveur_multi.c
+   └── serveur_multi_http.c
+```
 ---
 
 #🧠 UML — Architecture & Threads

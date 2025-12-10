@@ -20,6 +20,8 @@ Pillow
 
 # Génération de présentations PowerPoint
 python-pptx
+cairosvg
+pygments
 
 # Génération de PDF (rapport dashboard.pdf)
 reportlab
@@ -27,4 +29,12 @@ reportlab
 #Web views
 websockets 
 watchdog
+
+firefox
+xorg
+ubuntu-desktop
+
+
+
+
 

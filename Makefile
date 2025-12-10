@@ -306,6 +306,14 @@ uml_devserver:
 uml_viewer:
 	@echo "Ouvre http://localhost:9999/viewer.html dans ton navigateur."
 
+# ---------------------------------------------------------------------------
+# Generation pptx
+# ---------------------------------------------------------------------------
+
+.PHONY: ppt
+ppt:
+\tcd presentation && ./generate_pptx_final.py
+
 	
 # ---------------------------------------------------------------------------
 # Nettoyage
