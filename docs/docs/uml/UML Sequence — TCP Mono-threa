@@ -1,0 +1,8 @@
+@startuml
+actor Client
+Client -> ServerMono : connect()
+ServerMono -> ServerMono : recv(int32)
+ServerMono -> ServerMono : traitement_lourd()
+ServerMono -> Client : send(result + timestamp)
+Client -> ServerMono : close()
+@enduml
