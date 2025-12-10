@@ -143,4 +143,9 @@ int main(void) {
     printf("[MONO] ✅ Arrêt propre effectué.\n");
 
     return 0;
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> fd8c599 (Update)

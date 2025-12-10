@@ -1,9 +1,26 @@
+# Core benchmarking & data analysis
 psutil
 pandas
 matplotlib
 openpyxl
+
+# Visualisation avancée (si tu veux utiliser Plotly / Kaleido)
 plotly==5.24.1
 kaleido
+
+# API / mini-serveur Web pour visualiser les résultats
 Flask
-plantuml 
+
+# UML / diagrammes (si tu génères des graphes UML)
+plantuml
 graphviz
+
+# Génération d'images (backgrounds PPT, etc.)
+Pillow
+
+# Génération de présentations PowerPoint
+python-pptx
+
+# Génération de PDF (rapport dashboard.pdf)
+reportlab
+
