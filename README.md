@@ -36,11 +36,17 @@ Ce projet implémente **quatre serveurs réseau haute performance** :
 Le projet inclut :
 
 ✔ Queue FIFO générique thread-safe (`queue.c`)
+
 ✔ Parseur HTTP robuste (`http.c`)
+
 ✔ Benchmarks Python (latence, CPU, mémoire, RPS)
+
 ✔ Dashboard interactif Plotly
+
 ✔ UML générés automatiquement (PlantUML → SVG)
+
 ✔ Scripts DevOps & monitoring
+
 ✔ Présentation académique professionnelle
 ---
 
