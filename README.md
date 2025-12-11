@@ -132,7 +132,7 @@ flowchart LR
     classDef client fill:#0af,color:#fff,stroke:#036,stroke-width:2px;
     classDef accept fill:#09f,color:#fff,stroke:#036,stroke-width:2px;
     classDef queue fill:#f90,color:#000,stroke:#630,stroke-width:2px;
-    classDef worker fill:#6c0,color:#fff,stroke:#030,stroke-width: 2px;
+    classDef worker fill:#6c0,color:#fff,stroke:#030,stroke-width:2px;
     classDef treat fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
     classDef resp fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
@@ -143,7 +143,7 @@ flowchart LR
     C --> E["Worker 2"]:::worker
     C --> F["Worker N"]:::worker
 
-    D --> G("Traitement<br/>CPU-bound"):::treat
+    D --> G["Traitement<br/>CPU-bound"]:::treat
     E --> G
     F --> G
 
