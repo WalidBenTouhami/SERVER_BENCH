@@ -1,0 +1,43 @@
+name: C Build & Tests
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "Makefile"
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential valgrind cppcheck
+
+      - name: Build (Release)
+        run: |
+          make clean
+          make -j"$(nproc)"
+
+      - name: Run unit tests
+        run: |
+          make test
+
+      - name: Run valgrind basic check
+        run: |
+          if [ -f ./bin/serveur_multi ]; then
+            valgrind --leak-check=full --error-exitcode=1 ./bin/serveur_multi &
+            PID=$!
+            sleep 2
+            kill $PID || true
+          else
+            echo "serveur_multi manquant, skip valgrind"
+          fi
