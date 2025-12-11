@@ -2,11 +2,19 @@
 #include <stdlib.h>
 
 void queue_init(queue_t *q, size_t size_max) {
+    if (!q) return;
+    
     q->head = q->tail = NULL;
     q->size = 0;
     q->size_max = size_max;  // 0 = illimité
     q->shutdown = false;
-    pthread_mutex_init(&q->mutex, NULL);
+    
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);
+    pthread_mutex_init(&q->mutex, &mutex_attr);
+    pthread_mutexattr_destroy(&mutex_attr);
+    
     pthread_cond_init(&q->not_empty, NULL);
     pthread_cond_init(&q->not_full, NULL);
 }

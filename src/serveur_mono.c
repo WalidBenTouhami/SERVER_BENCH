@@ -14,6 +14,11 @@
 #define PORT 5050
 #define BACKLOG 50   /* Amélioré pour éviter saturation */
 
+/* Ignore SIGPIPE to handle broken connections gracefully */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 /* ---------- Variables globales pour shutdown propre ---------- */
 static volatile sig_atomic_t running = 1;
 static int server_fd = -1;
@@ -62,6 +67,7 @@ static void handle_sigint(int sig) {
 int main(void) {
 
     /* Installation du handler */
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, handle_sigint);
     srand((unsigned)time(NULL));
 
@@ -129,8 +135,8 @@ int main(void) {
         int64_t ts = timestamp_us();
         uint64_t ts_net = htonll((uint64_t)ts);
 
-        send(client_fd, &result_net, sizeof(result_net), 0);
-        send(client_fd, &ts_net, sizeof(ts_net), 0);
+        send(client_fd, &result_net, sizeof(result_net), MSG_NOSIGNAL);
+        send(client_fd, &ts_net, sizeof(ts_net), MSG_NOSIGNAL);
 
         close(client_fd);
     }

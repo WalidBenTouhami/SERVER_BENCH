@@ -14,6 +14,11 @@
 
 #include "queue.h"
 
+/* Ignore SIGPIPE to handle broken connections gracefully */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 #define PORT 5051
 #define BACKLOG 50
 #define WORKER_COUNT 8
@@ -102,8 +107,8 @@ static void *worker_func(void *arg) {
         int64_t ts = timestamp_us();
         uint64_t ts_net = htonll((uint64_t)ts);
 
-        send(client_fd, &result_net, sizeof(result_net), 0);
-        send(client_fd, &ts_net, sizeof(ts_net), 0);
+        send(client_fd, &result_net, sizeof(result_net), MSG_NOSIGNAL);
+        send(client_fd, &ts_net, sizeof(ts_net), MSG_NOSIGNAL);
 
         close(client_fd);
     }
@@ -115,6 +120,8 @@ static void *worker_func(void *arg) {
    MAIN SERVER — MULTI-THREAD + QUEUE FIFO
    =========================================================== */
 int main(void) {
+    /* Ignore SIGPIPE globally to handle broken connections */
+    signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, handle_sigint);
     srand((unsigned)time(NULL));
 

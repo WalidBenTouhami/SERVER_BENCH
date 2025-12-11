@@ -30,18 +30,18 @@ CC      := gcc
 PYTHON      ?= python3
 VENV_PY     := venv/bin/python
 
-BASE_CFLAGS := -Wall -Wextra -pthread -I$(SRC_DIR)
+BASE_CFLAGS := -Wall -Wextra -Wpedantic -Wformat=2 -Wformat-security -pthread -I$(SRC_DIR)
 DEPFLAGS    := -MMD -MP
 LDFLAGS     := -lm -pthread
 
 ifeq ($(MODE),release)
-    OPT_FLAGS  := -O3 -march=native -flto
-    CFLAGS     := $(BASE_CFLAGS) $(OPT_FLAGS)
-    LDFLAGS    += -flto
-    BUILD_TAG  := [RELEASE]
+    OPT_FLAGS  := -O3 -march=native -flto -ffast-math -funroll-loops -DNDEBUG
+    CFLAGS     := $(BASE_CFLAGS) $(OPT_FLAGS) -fno-stack-protector
+    LDFLAGS    += -flto -Wl,-O1 -Wl,--as-needed
+    BUILD_TAG  := [RELEASE OPTIMIZED]
 else ifeq ($(MODE),debug)
     OPT_FLAGS  := -O0
-    SAN_FLAGS  := -g -fsanitize=address,undefined -DDEBUG
+    SAN_FLAGS  := -g -fsanitize=address,undefined -DDEBUG -fno-omit-frame-pointer
     CFLAGS     := $(BASE_CFLAGS) $(OPT_FLAGS) $(SAN_FLAGS)
     LDFLAGS    += $(SAN_FLAGS)
     BUILD_TAG  := [DEBUG + ASan + UBSan]
@@ -135,6 +135,12 @@ $(BIN_DIR)/test_queue: $(OBJS_test_queue)
 	@echo "$(BLUE)[LINK TEST] queue$(RESET)"
 	@$(CC) -o $@ $^ $(LDFLAGS)
 
+.PHONY: test
+test: $(BIN_DIR)/test_queue
+	@echo "$(CYAN)Running tests...$(RESET)"
+	@$(BIN_DIR)/test_queue
+	@echo "$(GREEN)[OK] All tests passed$(RESET)"
+
 # ---------------------------------------------------------------------------
 # Compilation objets
 # ---------------------------------------------------------------------------
@@ -174,10 +180,11 @@ run_multi_http: $(BIN_DIR)/serveur_multi_http
 
 kill_servers:
 	@echo "$(RED)Arrêt serveurs...$(RESET)"
-	@pkill serveur_mono       || true
-	@pkill serveur_multi      || true
-	@pkill serveur_mono_http  || true
-	@pkill serveur_multi_http || true
+	@pgrep serveur_mono       | xargs -r kill -SIGINT || true
+	@pgrep serveur_multi      | xargs -r kill -SIGINT || true
+	@pgrep serveur_mono_http  | xargs -r kill -SIGINT || true
+	@pgrep serveur_multi_http | xargs -r kill -SIGINT || true
+	@echo "$(GREEN)[OK] Serveurs arrêtés$(RESET)"
 
 # ---------------------------------------------------------------------------
 # UML : génération + devserver

@@ -56,15 +56,17 @@ void send_http_response(int client_fd,
                      "Content-Type: %s\r\n"
                      "Content-Length: %zu\r\n"
                      "Connection: %s\r\n"
+                     "Server: SERVER_BENCH/1.0\r\n"
                      "\r\n",
                      status, content_type, body_len, connection);
 
-    if (n < 0) {
+    if (n < 0 || n >= (int)sizeof(header)) {
         return;
     }
 
-    send(client_fd, header, (size_t)n, 0);
+    /* Use MSG_NOSIGNAL to avoid SIGPIPE on broken connections */
+    send(client_fd, header, (size_t)n, MSG_NOSIGNAL);
     if (body_len > 0) {
-        send(client_fd, body, body_len, 0);
+        send(client_fd, body, body_len, MSG_NOSIGNAL);
     }
 }
