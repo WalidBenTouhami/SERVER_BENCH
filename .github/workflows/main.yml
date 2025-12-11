@@ -1,0 +1,24 @@
+# .github/workflows/benchmark.yml
+name: Benchmark + Badge
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt install -y build-essential python3-pip
+      - run: cd serveur_c && make
+      - run: cd monitoring_python && pip install -r requirements.txt && python benchmark.py
+      - name: Create badge
+        run: |
+          TPS=$(jq '.[-1].rps' results/multi_thread.json)
+          echo "Throughput: $TPS req/s"
+          echo "![Throughput](https://img.shields.io/badge/throughput-$TPS%20req/s-brightgreen)" >> README.md
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update benchmark badge"
