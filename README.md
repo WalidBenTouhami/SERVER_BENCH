@@ -109,11 +109,11 @@ flowchart LR
     classDef treat fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
     classDef resp fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
-    A[Clients 1..N]:::client --> B[accept()]:::accept
+    A[Clients 1.. N]::: client --> B[accept()]:::accept
     B --> C["Queue FIFO<br/>(Mutex + CondVar)"]:::queue
 
     C --> D[Worker 1]:::worker
-    C --> E[Worker 2]:::worker
+    C --> E[Worker 2]::: worker
     C --> F[Worker N]:::worker
 
     D --> G((Traitement<br/>CPU-bound)):::treat
@@ -125,47 +125,230 @@ flowchart LR
 
 ---
 
-## File FIFO Bornée (Thread-Safe)
+# 🧩 1) **Architecture Globale — Multi-thread avec Queue FIFO**
 
 ```mermaid
-classDiagram
-    class Queue {
-        +Node *head
-        +Node *tail
-        +size_t size
-        +size_t size_max
-        +mutex
-        +cond_not_full
-        +cond_not_empty
-        +bool shutdown
-        +push()
-        +pop()
-    }
-    class Node {
-        +void *data
-        +Node *next
-    }
-    Queue --> Node
+flowchart LR
+    classDef client fill:#0af,color:#fff,stroke:#036,stroke-width: 2px;
+    classDef dispatcher fill:#09f,color:#fff,stroke:#036,stroke-width:2px;
+    classDef queue fill:#f90,color:#000,stroke:#630,stroke-width:2px;
+    classDef worker fill:#6c0,color:#fff,stroke:#030,stroke-width:2px;
+    classDef process fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
+    classDef response fill:#555,color:#fff,stroke:#222,stroke-width: 2px;
+
+    A[Clients 1..N]:::client --> B[accept()]:::dispatcher
+    B --> C["Queue FIFO<br/>(mutex + condvars)"]:::queue
+
+    C --> W1[Worker 1]:::worker
+    C --> W2[Worker 2]:::worker
+    C --> WN[Worker N]:::worker
+
+    W1 --> T((Traitement)):::process
+    W2 --> T
+    WN --> T
+
+    T --> R[send()<br/>Réponse]:::response
 ```
 
 ---
 
-## Séquence Multi-thread
+# 🧩 2) **Architecture de la Queue FIFO (Thread-Safe)**
+
+```mermaid
+classDiagram
+    class queue_t {
+        queue_node_t *head
+        queue_node_t *tail
+        pthread_mutex_t mutex
+        pthread_cond_t not_empty
+        pthread_cond_t not_full
+        bool shutdown
+        size_t size
+        size_t size_max
+        +void push(void *data)
+        +void* pop()
+        +void destroy()
+    }
+
+    class queue_node_t {
+        void *data
+        queue_node_t *next
+    }
+
+    queue_t --> queue_node_t:  contient
+```
+
+---
+
+# 🧵 3) **Threading Model — Dispatcher & Worker Threads**
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant Dispatcher
     participant Queue
-    participant Worker
+    participant Worker1
+    participant Worker2
 
-    Client->>Dispatcher: connexion TCP
+    Client->>Dispatcher: accept()
     Dispatcher->>Queue: push(fd)
+
+    alt Queue non vide
+        Queue->>Worker1: pop(fd)
+    else Saturation
+        Dispatcher->>Queue: wait(not_full)
+    end
+
+    Worker1->>Worker1: traitement_lourd()
+    Worker1->>Client: send() réponse
+```
+
+---
+
+# 🔁 4) **Séquence TCP — Mono-thread**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server as Serveur Mono-thread
+
+    Client->>Server:  connect()
+    Server->>Server: accept()
+
+    loop Pour chaque client (séquentiel)
+        Client->>Server: send(number)
+        Server->>Server: traitement_lourd()
+        Server->>Client: send(result)
+        Server->>Client: close()
+    end
+```
+
+---
+
+# 🔁 5) **Séquence TCP — Multi-thread + Queue**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Dispatcher
+    participant Queue
+    participant Worker as Worker[i]
+
+    Client->>Dispatcher: connect()
+    Dispatcher->>Queue: push(fd)
+
+    Queue->>Worker: pop(fd)
+    Worker->>Worker: traitement_lourd()
+    Worker->>Client: send(result)
+```
+
+---
+
+# 🌐 6) **Séquence HTTP — Mono-thread**
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server as Serveur HTTP(Mono)
+
+    Browser->>Server: GET /hello
+    Server->>Server: parse_http_request()
+    Server->>Server: handler_hello()
+    Server->>Browser: HTTP/1.1 200 OK + JSON
+    Server->>Browser: close()
+```
+
+---
+
+# 🌐 7) **Séquence HTTP — Multi-thread**
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Dispatcher
+    participant Queue
+    participant Worker as Worker[i]
+
+    Browser->>Dispatcher: GET /hello
+    Dispatcher->>Queue: push(request)
+
+    Queue->>Worker: pop()
+    Worker->>Worker: route_handler()
+    Worker->>Browser: HTTP/1.1 200 OK + JSON
+```
+
+---
+
+# 🧠 8) **Comparaison Synthétique — Mono vs Multi-thread**
+
+```mermaid
+flowchart TB
+    classDef mono fill:#f99,color:#fff,stroke:#c00,stroke-width:2px;
+    classDef multi fill:#9f9,color:#000,stroke:#060,stroke-width:2px;
+    classDef arrow fill:#fff,color:#000,stroke:#ccc;
+
+    A[Mono-thread]::: mono --> B[1 seul thread<br/>Séquentiel]
+    A --> C[accept() bloquant]
+    A --> D[Latence cumulée]
+
+    E[Multi-thread]:::multi --> F[Pool de Workers]
+    E --> G[Queue FIFO]
+    E --> H[Parallélisme réel]
+    E --> I[Throughput élevé]
+
+    B -.->|évolution| E
+```
+
+---
+
+# 🗂️ **File FIFO Bornée (Thread-Safe)**
+
+```mermaid
+classDiagram
+    class Queue {
+        -Node *head
+        -Node *tail
+        -size_t size
+        -size_t size_max
+        -pthread_mutex_t mutex
+        -pthread_cond_t cond_not_full
+        -pthread_cond_t cond_not_empty
+        -bool shutdown
+        +push(void *data) void
+        +pop() void*
+        +is_empty() bool
+        +is_full() bool
+        +destroy() void
+    }
+
+    class Node {
+        -void *data
+        -Node *next
+    }
+
+    Queue --> Node:  contient
+```
+
+---
+
+# 🔄 **Séquence Multi-thread — Complète**
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Dispatcher as Dispatcher Thread
+    participant Queue as Queue FIFO
+    participant Worker as Worker Pool
+
+    Client->>Dispatcher:  TCP connect()
+    Dispatcher->>Dispatcher: accept(fd)
+    Dispatcher->>Queue: push(fd)
+    
     Queue->>Worker: pop(fd)
     Worker->>Worker: heavy_computation()
     Worker->>Client: send(response)
+    Worker->>Client: close()
 ```
-
 ---
 
 # 🔍 Analyse Technique FR/EN
