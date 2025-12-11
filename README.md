@@ -31,6 +31,15 @@
 
 **Documentation en ligne** → <https://WalidBenTouhami.github.io/SERVER_BENCH/>
 
+
+### 📊 Résultats en Temps Réel
+🔥 **Throughput actuel :**  
+<img src="https://raw.githubusercontent.com/WalidBenTouhami/SERVER_BENCH/main/python/figures/1-throughput.png" width="350"/>  
+*(Graphique statique ; généré via benchmarks Python – voir figures/ pour live updates)*
+
+**Documentation en ligne** → [https://walidbentouhami.github.io/SERVER_BENCH/](https://walidbentouhami.github.io/SERVER_BENCH/)  
+*(Dashboard interactif avec résultats, graphiques et comparaison mono/multi)*
+
 ---
 
 ## 📚 Table des matières
