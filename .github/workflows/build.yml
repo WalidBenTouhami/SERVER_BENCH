@@ -6,6 +6,7 @@ on:
     paths:
       - "src/**"
       - "Makefile"
+      - "tests/**"
   pull_request:
     branches: [ "main" ]
 
@@ -34,10 +35,21 @@ jobs:
       - name: Run valgrind basic check
         run: |
           if [ -f ./bin/serveur_multi ]; then
-            valgrind --leak-check=full --error-exitcode=1 ./bin/serveur_multi &
-            PID=$!
+            timeout 5 valgrind --leak-check=full --error-exitcode=1 ./bin/serveur_multi &
+            SERVER_PID=$!
             sleep 2
-            kill $PID || true
+            if kill -0 "$SERVER_PID" 2>/dev/null; then
+              kill -SIGINT "$SERVER_PID" 2>/dev/null || true
+              wait "$SERVER_PID" 2>/dev/null || true
+            fi
           else
             echo "serveur_multi manquant, skip valgrind"
           fi
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            bin/
+          if-no-files-found: ignore

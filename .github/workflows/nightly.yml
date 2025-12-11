@@ -3,6 +3,7 @@ name: Nightly Pipeline
 on:
   schedule:
     - cron: "0 3 * * *"
+  workflow_dispatch:
 
 jobs:
   nightly:
@@ -16,6 +17,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential valgrind
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Full build
         run: |
           make clean
@@ -24,6 +30,14 @@ jobs:
       - name: Run tests
         run: |
           make test || true
+
+      - name: Install Python dependencies
+        run: |
+          if [ -f python/requirements.txt ]; then
+            pip install -r python/requirements.txt
+          else
+            pip install psutil pandas matplotlib
+          fi
 
       - name: Run basic benchmark (if available)
         run: |
