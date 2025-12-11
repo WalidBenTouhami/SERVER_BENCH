@@ -5,6 +5,11 @@
 #include <sys/socket.h>
 #include "http.h"
 
+/* Fallback for systems without MSG_NOSIGNAL */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 void parse_http_request(const char *req, char *method, char *path, char *query) {
     char line[1024] = {0};
 

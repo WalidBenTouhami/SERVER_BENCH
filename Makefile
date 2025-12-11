@@ -36,7 +36,7 @@ LDFLAGS     := -lm -pthread
 
 ifeq ($(MODE),release)
     OPT_FLAGS  := -O3 -march=native -flto -ffast-math -funroll-loops -DNDEBUG
-    CFLAGS     := $(BASE_CFLAGS) $(OPT_FLAGS) -fno-stack-protector
+    CFLAGS     := $(BASE_CFLAGS) $(OPT_FLAGS) -fstack-protector-strong
     LDFLAGS    += -flto -Wl,-O1 -Wl,--as-needed
     BUILD_TAG  := [RELEASE OPTIMIZED]
 else ifeq ($(MODE),debug)
