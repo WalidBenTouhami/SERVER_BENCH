@@ -75,9 +75,9 @@ jobs:
         run: |
           mkdir -p public
           if [ -d docs ]; then
-            # Copy docs directory contents (using . to handle empty directories)
+            # Copy docs directory contents if not empty
             if [ "$(ls -A docs)" ]; then
-              cp -r docs/* public/ 2>/dev/null || true
+              cp -r docs/* public/
             fi
           fi
           # Copy README.md if it exists
