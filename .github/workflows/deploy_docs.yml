@@ -94,7 +94,7 @@ jobs:
           fi
           
           # Check that we have files to deploy
-          file_count=$(find public -type f | wc -l)
+          file_count=$(find public -type f | wc -l | tr -d ' ')
           if [ "$file_count" -eq 0 ]; then
             echo "❌ Error: No files found in public directory"
             exit 1
