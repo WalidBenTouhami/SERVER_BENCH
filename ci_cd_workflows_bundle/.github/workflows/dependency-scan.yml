@@ -1,0 +1,25 @@
+name: Python Dependency Scan
+
+on:
+  push:
+    paths:
+      - "python/**"
+      - "requirements.txt"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit || true

@@ -1,0 +1,47 @@
+name: Python Benchmarks
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "python/**"
+      - "src/**"
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install benchmark deps
+        run: |
+          if [ -f python/requirements.txt ]; then
+            pip install -r python/requirements.txt
+          else
+            pip install psutil pandas matplotlib plotly kaleido
+          fi
+
+      - name: Run Extreme Benchmarks
+        run: |
+          if [ -f python/benchmark_extreme.py ]; then
+            python python/benchmark_extreme.py
+          elif [ -f python/benchmark.py ]; then
+            python python/benchmark.py
+          else
+            echo "Aucun script benchmark_extreme.py trouvé."
+          fi
+
+      - name: Upload Dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-dashboard
+          path: |
+            python/dashboard.html
+            python/figures
+          if-no-files-found: ignore

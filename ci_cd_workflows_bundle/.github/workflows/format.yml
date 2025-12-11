@@ -1,0 +1,19 @@
+name: Formatting Check
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check C formatting
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          clang-format --dry-run --Werror src/*.c src/*.h
+
+      - name: Markdown lint
+        uses: actionshub/markdownlint@main

@@ -1,0 +1,32 @@
+name: Nightly Pipeline
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential valgrind
+
+      - name: Full build
+        run: |
+          make clean
+          make -j"$(nproc)"
+
+      - name: Run tests
+        run: |
+          make test || true
+
+      - name: Run basic benchmark (if available)
+        run: |
+          if [ -f python/benchmark_extreme.py ]; then
+            python python/benchmark_extreme.py || true
+          fi
