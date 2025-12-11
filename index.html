@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard – Serveur Haute Performance</title>
+  <style>
+  :root {
+    --bg-color: #fafafa;
+    --text-color: #111111;
+    --card-bg: #ffffff;
+    --accent: #0d47a1;
+    --accent-soft: #e3f2fd;
+    --border-color: #cccccc;
+  }
+  body[data-theme="dark"] {
+    --bg-color: #0b1020;
+    --text-color: #f5f5f5;
+    --card-bg: #161b2e;
+    --accent: #90caf9;
+    --accent-soft: #1e2746;
+    --border-color: #394264;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+  }
+  h1 { color: var(--accent); }
+  h2 { color: var(--accent); }
+  .card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+  }
+  .perf-table, .summary-table, .compare-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  .perf-table th, .summary-table th, .compare-table th {
+    background: var(--accent-soft);
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+  }
+  .perf-table td, .summary-table td, .compare-table td {
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+  }
+  img {
+    max-width: 650px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    padding: 4px;
+    margin: 8px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .btn {
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .btn:hover {
+    filter: brightness(1.05);
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  .slider-row input[type="range"] {
+    flex: 1;
+  }
+  </style>
+</head>
+<body data-theme="light">
+<div class="toolbar">
+  <h1>Dashboard – Serveur Haute Performance</h1>
+  <div>
+    <button id="themeToggle" class="btn">Basculer mode sombre</button>
+  </div>
+</div>
+<div class="card">
+<h2>Résumé statistique</h2>
+<table class="dataframe summary-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Débit moyen (req/s)</th>
+      <th>Latence P99 moyenne (ms)</th>
+      <th>CPU moyen (%)</th>
+      <th>Mémoire moyenne (MB)</th>
+    </tr>
+    <tr>
+      <th>server</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>mono</th>
+      <td>18.62</td>
+      <td>4426.27</td>
+      <td>0.12</td>
+      <td>1.97</td>
+    </tr>
+    <tr>
+      <th>multi</th>
+      <td>125.21</td>
+      <td>891.92</td>
+      <td>1.18</td>
+      <td>2.16</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<div class="card">
+<h2>🧠 Analyse avancée des performances</h2>
+<p>Globalement, les mesures de benchmark montrent que le serveur multi-thread offre un débit moyen d’environ 125.2 requêtes par seconde, contre 18.6 req/s pour le serveur mono-thread. Sur l’ensemble des configurations testées, cela correspond à un gain moyen de performance d’environ 6.73× en faveur de l’architecture multi-thread.</p>
+<p>En termes de latence, la mesure P99 (latence subie par les 1 % de requêtes les plus lentes) reste plus favorable au serveur multi-thread, avec une P99 moyenne de 891.9 ms contre 4426.3 ms pour le mono-thread. Cela indique que le multi-thread absorbe mieux les pics de charge et réduit les phénomènes de saturation lorsque le nombre de clients simultanés augmente.</p>
+<p>À la charge la plus élevée (≈ 300 clients), on observe un débit de 143.8 req/s pour le serveur multi-thread contre 17.7 req/s pour le mono-thread. La latence P99 atteint 6776.0 ms côté mono, alors qu’elle est de 1892.9 ms côté multi, ce qui confirme que le mono-thread atteint rapidement un plateau de performance tandis que le multi-thread continue à exploiter les cœurs CPU disponibles.</p>
+<p>L’analyse de l’utilisation CPU montre que les deux architectures finissent par saturer les cœurs disponibles, mais le serveur multi-thread parvient à transformer cette consommation CPU en débit utile plus élevé (CPU moyen ≈ 1.2 % contre 0.1 % pour le mono-thread). La consommation mémoire reste globalement maîtrisée pour les deux serveurs, avec une légère surconsommation attendue côté multi-thread liée à la gestion des threads et de la file FIFO.</p>
+<p>En pratique, l’architecture multi-thread avec file FIFO bornée constitue le meilleur choix pour un environnement de production soumis à des pics de charge importants, à condition de maîtriser la complexité de synchronisation et l’arrêt propre des threads. Le serveur mono-thread conserve néanmoins un intérêt pédagogique fort et peut être adapté à des scénarios simples ou à faible charge, où la lisibilité du code prime sur la performance brute.</p>
+</div>
+<div class="card">
+<h2>⚖ Comparateur interactif Mono vs Multi</h2>
+<p>Choisis un nombre de clients pour comparer les métriques entre le serveur mono-thread et le multi-thread. Le point de mesure le plus proche sera utilisé pour chaque serveur.</p>
+<div class="slider-row">
+  <label for="clientSlider">Nombre de clients :</label>
+  <input type="range" id="clientSlider" min="10" max="300" step="1" value="10">
+  <span id="clientValue"></span>
+</div>
+<div id="compareOutput" style="margin-top:1rem;"></div>
+</div>
+<div class="card">
+<h2>📈 Graphiques de performance</h2>
+<div><img src="figures/1-throughput.png" alt="1-throughput.png"></div>
+<div><img src="figures/2-latency_p99.png" alt="2-latency_p99.png"></div>
+<div><img src="figures/3-cpu.png" alt="3-cpu.png"></div>
+<div><img src="figures/4-memory.png" alt="4-memory.png"></div>
+<div><img src="figures/5-speedup.png" alt="5-speedup.png"></div>
+<div><img src="figures/6-saturation.png" alt="6-saturation.png"></div>
+</div>
+<script>
+const DATA = [{"server": "mono", "clients": 10, "success": 10, "fail": 0, "mean": 280.6083226000169, "median": 313.38573950000637, "p95": 440.28001700007735, "p99": 440.28001700007735, "max_latency": 474.52903099997457, "cpu_mean": 0.0, "mem_mean": 2.0, "throughput_rps": 20.788279371849736, "time_total": 0.4810402929999782}, {"server": "mono", "clients": 50, "success": 50, "fail": 0, "mean": 1281.9158873599918, "median": 1247.1403729999224, "p95": 2413.9357890001065, "p99": 2521.081558999981, "max_latency": 2536.891096999966, "cpu_mean": 0.0, "mem_mean": 1.9921875, "throughput_rps": 19.52018612625472, "time_total": 2.561450986000068}, {"server": "mono", "clients": 100, "success": 100, "fail": 0, "mean": 2699.232012079999, "median": 2585.395463999987, "p95": 5247.100844999977, "p99": 5481.217112999957, "max_latency": 5529.92344200004, "cpu_mean": 0.17857142857142858, "mem_mean": 1.984375, "throughput_rps": 17.93840577328437, "time_total": 5.574631394999983}, {"server": "mono", "clients": 200, "success": 123, "fail": 77, "mean": 3540.7161972195086, "median": 3569.7636380000404, "p95": 6724.0210010000965, "p99": 6912.8041019999955, "max_latency": 7008.626993999997, "cpu_mean": 0.1388888888888889, "mem_mean": 1.9406467013888888, "throughput_rps": 17.160969219630502, "time_total": 7.167427341999996}, {"server": "mono", "clients": 300, "success": 126, "fail": 174, "mean": 3392.4014504603197, "median": 3365.8931634999476, "p95": 6482.0583330000545, "p99": 6775.970260999998, "max_latency": 6960.489852000023, "cpu_mean": 0.2777777777777778, "mem_mean": 1.9216579861111112, "throughput_rps": 17.67403070880404, "time_total": 7.129103829000087}, {"server": "multi", "clients": 10, "success": 10, "fail": 0, "mean": 50.16766740000094, "median": 48.74995099999069, "p95": 79.33503999993263, "p99": 79.33503999993263, "max_latency": 83.45785699998487, "cpu_mean": 0.0, "mem_mean": 2.14453125, "throughput_rps": 112.37956169997307, "time_total": 0.08898415199996634}, {"server": "multi", "clients": 50, "success": 50, "fail": 0, "mean": 212.42288877999727, "median": 222.7169684999808, "p95": 355.9956440000178, "p99": 397.9459490000181, "max_latency": 408.3816959999922, "cpu_mean": 1.6666666666666667, "mem_mean": 2.1640625, "throughput_rps": 115.25452697938692, "time_total": 0.433822439000096}, {"server": "multi", "clients": 100, "success": 100, "fail": 0, "mean": 377.63227982000103, "median": 380.8136064999985, "p95": 684.726062999971, "p99": 718.4971100000439, "max_latency": 775.4877139999508, "cpu_mean": 1.0, "mem_mean": 2.16796875, "throughput_rps": 120.72466297263244, "time_total": 0.8283311589999585}, {"server": "multi", "clients": 200, "success": 200, "fail": 0, "mean": 721.2489311950026, "median": 732.1470009999871, "p95": 1300.1197019999609, "p99": 1370.9569850000207, "max_latency": 1392.8811719999885, "cpu_mean": 1.875, "mem_mean": 2.171875, "throughput_rps": 133.95313789585524, "time_total": 1.4930594620000193}, {"server": "multi", "clients": 300, "success": 300, "fail": 0, "mean": 979.2839264099958, "median": 980.0802395000119, "p95": 1828.6210670000855, "p99": 1892.8551789999801, "max_latency": 1943.4605840000359, "cpu_mean": 1.3636363636363635, "mem_mean": 2.16015625, "throughput_rps": 143.75813002839942, "time_total": 2.0868384970000307}];
+const MIN_CLIENTS = 10;
+const MAX_CLIENTS = 300;
+
+function getNearestRow(clients, server) {
+  const filtered = DATA.filter(r => r.server === server);
+  if (filtered.length === 0) return null;
+  let best = filtered[0];
+  let bestDiff = Math.abs(filtered[0].clients - clients);
+  for (let i = 1; i < filtered.length; i++) {
+    const d = Math.abs(filtered[i].clients - clients);
+    if (d < bestDiff) {
+      bestDiff = d;
+      best = filtered[i];
+    }
+  }
+  return best;
+}
+
+function updateCompare() {
+  const slider = document.getElementById("clientSlider");
+  const valueSpan = document.getElementById("clientValue");
+  const out = document.getElementById("compareOutput");
+  if (!slider || !out || !valueSpan) return;
+
+  const clients = parseInt(slider.value);
+  valueSpan.textContent = clients;
+
+  const mono = getNearestRow(clients, "mono");
+  const multi = getNearestRow(clients, "multi");
+
+  if (!mono || !multi) {
+    out.innerHTML = "<p>Données insuffisantes pour cette configuration.</p>";
+    return;
+  }
+
+  const thMono = mono.throughput_rps || 0.0;
+  const thMulti = multi.throughput_rps || 0.0;
+  const p99Mono = mono.p99 || 0.0;
+  const p99Multi = multi.p99 || 0.0;
+  const cpuMono = (mono.cpu_mean === null || mono.cpu_mean === undefined) ? 0.0 : mono.cpu_mean;
+  const cpuMulti = (multi.cpu_mean === null || multi.cpu_mean === undefined) ? 0.0 : multi.cpu_mean;
+  const memMono = (mono.mem_mean === null || mono.mem_mean === undefined) ? 0.0 : mono.mem_mean;
+  const memMulti = (multi.mem_mean === null || multi.mem_mean === undefined) ? 0.0 : multi.mem_mean;
+
+  const speedup = thMono > 0 ? (thMulti / thMono) : 0.0;
+
+  out.innerHTML =
+    '<table class="compare-table">' +
+      '<thead><tr>' +
+        '<th>Métrique</th>' +
+        '<th>Mono-thread</th>' +
+        '<th>Multi-thread</th>' +
+      '</tr></thead>' +
+      '<tbody>' +
+        '<tr><td>Clients (point le plus proche)</td>' +
+          '<td>' + mono.clients + '</td>' +
+          '<td>' + multi.clients + '</td></tr>' +
+        '<tr><td>Débit (req/s)</td>' +
+          '<td>' + thMono.toFixed(1) + '</td>' +
+          '<td>' + thMulti.toFixed(1) + '</td></tr>' +
+        '<tr><td>Latence P99 (ms)</td>' +
+          '<td>' + p99Mono.toFixed(1) + '</td>' +
+          '<td>' + p99Multi.toFixed(1) + '</td></tr>' +
+        '<tr><td>CPU moyen (%)</td>' +
+          '<td>' + cpuMono.toFixed(1) + '</td>' +
+          '<td>' + cpuMulti.toFixed(1) + '</td></tr>' +
+        '<tr><td>Mémoire moyenne (MB)</td>' +
+          '<td>' + memMono.toFixed(1) + '</td>' +
+          '<td>' + memMulti.toFixed(1) + '</td></tr>' +
+        '<tr><td>Speedup multi / mono (débit)</td>' +
+          '<td colspan="2">' + speedup.toFixed(2) + '×</td></tr>' +
+      '</tbody>' +
+    '</table>';
+}
+
+function initTheme() {
+  const saved = window.localStorage.getItem("dashboardTheme");
+  const body = document.body;
+  if (saved === "dark") {
+    body.setAttribute("data-theme", "dark");
+  } else {
+    body.setAttribute("data-theme", "light");
+  }
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const current = body.getAttribute("data-theme") || "light";
+  const next = (current === "light") ? "dark" : "light";
+  body.setAttribute("data-theme", next);
+  window.localStorage.setItem("dashboardTheme", next);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  initTheme();
+  const slider = document.getElementById("clientSlider");
+  if (slider) {
+    slider.addEventListener("input", updateCompare);
+    updateCompare();
+  }
+  const btn = document.getElementById("themeToggle");
+  if (btn) {
+    btn.addEventListener("click", toggleTheme);
+  }
+});
+
+</script>
+</body>
+</html>
