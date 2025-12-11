@@ -24,17 +24,9 @@
 | Benchmarks      | ![Bench](https://img.shields.io/github/actions/workflow/status/WalidBenTouhami/SERVER_BENCH/benchmarks.yml?branch=main&style=flat-square) |
 | Deploy Docs     | ![Deploy](https://img.shields.io/github/actions/workflow/status/WalidBenTouhami/SERVER_BENCH/deploy_docs.yml?branch=main&style=flat-square) |
 
-
-🔥 **Throughput actuel :**
-
-<img src="https://raw.githubusercontent.com/WalidBenTouhami/SERVER_BENCH/main/python/figures/1-throughput.png" width="900"/>
-
-**Documentation en ligne** → <https://WalidBenTouhami.github.io/SERVER_BENCH/>
-
-
 ### 📊 Résultats en Temps Réel
 🔥 **Throughput actuel :**  
-<img src="https://raw.githubusercontent.com/WalidBenTouhami/SERVER_BENCH/main/python/figures/1-throughput.png" width="350"/>  
+<img src="https://raw.githubusercontent.com/WalidBenTouhami/SERVER_BENCH/main/python/figures/1-throughput.png" width="600"/>  
 *(Graphique statique ; généré via benchmarks Python – voir figures/ pour live updates)*
 
 **Documentation en ligne** → [https://walidbentouhami.github.io/SERVER_BENCH/](https://walidbentouhami.github.io/SERVER_BENCH/)  
