@@ -5,6 +5,11 @@
 #include <sys/socket.h>
 #include "http.h"
 
+/* Fallback for systems without MSG_NOSIGNAL */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 void parse_http_request(const char *req, char *method, char *path, char *query) {
     char line[1024] = {0};
 
@@ -56,15 +61,17 @@ void send_http_response(int client_fd,
                      "Content-Type: %s\r\n"
                      "Content-Length: %zu\r\n"
                      "Connection: %s\r\n"
+                     "Server: SERVER_BENCH/1.0\r\n"
                      "\r\n",
                      status, content_type, body_len, connection);
 
-    if (n < 0) {
+    if (n < 0 || n >= (int)sizeof(header)) {
         return;
     }
 
-    send(client_fd, header, (size_t)n, 0);
+    /* Use MSG_NOSIGNAL to avoid SIGPIPE on broken connections */
+    send(client_fd, header, (size_t)n, MSG_NOSIGNAL);
     if (body_len > 0) {
-        send(client_fd, body, body_len, 0);
+        send(client_fd, body, body_len, MSG_NOSIGNAL);
     }
 }

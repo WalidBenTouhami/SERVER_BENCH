@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -184,6 +185,9 @@ static void* worker(void *arg) {
 }
 
 int main(void) {
+    /* Ignore SIGPIPE globally to handle broken connections */
+    signal(SIGPIPE, SIG_IGN);
+    
     queue_init(&job_queue, 128);
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);

@@ -192,11 +192,32 @@ make run_multi_http
 # 🧪 Tests & Validation
 
 ```bash
-make test
-valgrind --leak-check=full ./bin/serveur_multi
-valgrind --tool=helgrind ./bin/serveur_multi
-make debug
+make test                                        # Run unit tests
+make MODE=debug all                              # Build with sanitizers
+valgrind --leak-check=full ./bin/serveur_multi  # Memory leak check
+valgrind --tool=helgrind ./bin/serveur_multi    # Thread safety check
 ```
+
+## 🚀 Optimisations Appliquées
+
+Le projet utilise des optimisations avancées pour des performances maximales :
+
+### Compilation
+- `-O3 -march=native` : Optimisations agressives pour l'architecture cible
+- `-flto` : Link-Time Optimization pour optimisations inter-modules
+- `-ffast-math` : Optimisations mathématiques rapides
+- `-funroll-loops` : Déroulement de boucles pour réduire les branchements
+- `-DNDEBUG` : Désactive les assertions pour réduire le overhead
+
+### Sécurité et Robustesse
+- Signal handling : `SIGPIPE` ignoré pour gérer les connexions fermées
+- `MSG_NOSIGNAL` : Évite les crashes sur envoi vers socket fermé
+- Mutex avec `PTHREAD_MUTEX_ERRORCHECK` : Détection d'erreurs de verrouillage
+- Format security : `-Wformat=2 -Wformat-security` pour prévenir les vulnérabilités
+
+### Linker
+- `-Wl,-O1` : Optimisations au niveau du linker
+- `-Wl,--as-needed` : Réduit les dépendances inutiles
 
 ---
 
