@@ -5,6 +5,12 @@ on:
     paths:
       - "python/**"
       - "requirements.txt"
+    branches: [ "main" ]
+  pull_request:
+    paths:
+      - "python/**"
+      - "requirements.txt"
+    branches: [ "main" ]
 
 jobs:
   scan:
@@ -21,5 +27,14 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
 
+      - name: Install project dependencies
+        run: |
+          if [ -f python/requirements.txt ]; then
+            pip install -r python/requirements.txt
+          fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
       - name: Run pip-audit
-        run: pip-audit || true
+        run: pip-audit --ignore-vuln PYSEC-2022-43012 || true

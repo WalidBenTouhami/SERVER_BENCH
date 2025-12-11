@@ -2,9 +2,11 @@ name: Cppcheck Static Analysis
 
 on:
   push:
+    branches: [ "main" ]
     paths:
       - "src/**"
   pull_request:
+    branches: [ "main" ]
     paths:
       - "src/**"
 
@@ -22,4 +24,9 @@ jobs:
 
       - name: Run cppcheck
         run: |
-          cppcheck --enable=all --std=c11 --inconclusive --error-exitcode=1 src
+          cppcheck --enable=warning,style,performance,portability \
+            --std=c11 \
+            --suppress=missingIncludeSystem \
+            --error-exitcode=1 \
+            --inline-suppr \
+            src

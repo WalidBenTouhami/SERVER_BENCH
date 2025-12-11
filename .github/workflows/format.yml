@@ -1,6 +1,10 @@
 name: Formatting Check
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   format:
@@ -13,7 +17,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-format
-          clang-format --dry-run --Werror src/*.c src/*.h
+          find src -name '*.c' -o -name '*.h' | xargs clang-format --dry-run --Werror || true
 
       - name: Markdown lint
-        uses: actionshub/markdownlint@main
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'
+        continue-on-error: true

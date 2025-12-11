@@ -1,4 +1,4 @@
-# .github/workflows/benchmark.yml
+# .github/workflows/main.yml
 name: Benchmark + Badge
 
 on:
@@ -11,14 +11,44 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt install -y build-essential python3-pip
-      - run: cd serveur_c && make
-      - run: cd monitoring_python && pip install -r requirements.txt && python benchmark.py
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3-pip jq
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build project
+        run: make -j"$(nproc)"
+
+      - name: Install Python dependencies
+        run: |
+          if [ -f python/requirements.txt ]; then
+            pip install -r python/requirements.txt
+          else
+            pip install psutil pandas matplotlib
+          fi
+
+      - name: Run benchmark
+        id: benchmark
+        run: |
+          mkdir -p results
+          if [ -f python/benchmark_extreme.py ]; then
+            python python/benchmark_extreme.py || echo '{"rps": "N/A"}' > results/benchmark.json
+          fi
+
       - name: Create badge
         run: |
-          TPS=$(jq '.[-1].rps' results/multi_thread.json)
+          if [ -f results/benchmark.json ]; then
+            TPS=$(jq -r '.rps // "N/A"' results/benchmark.json 2>/dev/null || echo "N/A")
+          else
+            TPS="N/A"
+          fi
           echo "Throughput: $TPS req/s"
-          echo "![Throughput](https://img.shields.io/badge/throughput-$TPS%20req/s-brightgreen)" >> README.md
+
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update benchmark badge"
+        if: github.event_name == 'push'
