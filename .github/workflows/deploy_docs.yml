@@ -81,6 +81,7 @@ jobs:
           echo "::warning::Skipping deployment."
 
       - name: Prepare docs
+        id: prepare
         if: steps.pages.outcome == 'success'
         run: |
           mkdir -p public
@@ -96,7 +97,7 @@ jobs:
           fi
 
       - name: Verify prepared docs
-        if: steps.pages.outcome == 'success'
+        if: steps.prepare.outcome == 'success'
         run: |
           echo "Verifying public directory contents..."
           if [ ! -d public ]; then
