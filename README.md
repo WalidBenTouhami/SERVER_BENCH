@@ -136,14 +136,14 @@ flowchart LR
     classDef treat fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
     classDef resp fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
-    A["Clients 1.. N"]:::client --> B["accept()"]:::accept
+    A["Clients 1..  N"]:::client --> B["accept()"]:::accept
     B --> C["Queue FIFO<br/>(Mutex + CondVar)"]:::queue
 
     C --> D["Worker 1"]:::worker
     C --> E["Worker 2"]:::worker
     C --> F["Worker N"]:::worker
 
-    D --> G["Traitement<br/>CPU-bound"]:::treat
+    D --> G("Traitement<br/>CPU-bound"):::treat
     E --> G
     F --> G
 
