@@ -67,11 +67,21 @@ jobs:
           fi
 
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+        continue-on-error: true
+      
+      - name: Check Pages Status
+        if: steps.pages.outcome == 'failure'
+        run: |
+          echo "::warning::GitHub Pages is not enabled for this repository."
+          echo "::warning::To enable Pages: Go to Settings > Pages > Source > Select 'GitHub Actions'"
+          echo "::warning::Skipping deployment."
 
       - name: Prepare docs
+        if: steps.pages.outcome == 'success'
         run: |
           mkdir -p public
           if [ -d docs ]; then
@@ -105,9 +115,11 @@ jobs:
           find public -type f | head -20
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outcome == 'success'
         with:
           path: public/
 
       - name: Deploy to GitHub Pages
+        if: steps.pages.outcome == 'success'
         id: deployment
         uses: actions/deploy-pages@v4
