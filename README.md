@@ -109,18 +109,18 @@ flowchart LR
     classDef treat fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
     classDef resp fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
-    A[Clients 1.. N]::: client --> B[accept()]:::accept
-    B --> C["Queue FIFO<br/>(Mutex + CondVar)"]:::queue
+    A["Clients 1.. N"]::: client --> B["accept()"]:::accept
+    B --> C["Queue FIFO<br/>(Mutex + CondVar)"]::: queue
 
-    C --> D[Worker 1]:::worker
-    C --> E[Worker 2]::: worker
-    C --> F[Worker N]:::worker
+    C --> D["Worker 1"]:::worker
+    C --> E["Worker 2"]::: worker
+    C --> F["Worker N"]:::worker
 
-    D --> G((Traitement<br/>CPU-bound)):::treat
+    D --> G("Traitement<br/>CPU-bound"):::treat
     E --> G
     F --> G
 
-    G --> H[send()<br/>Réponse]:::resp
+    G --> H["send()<br/>Réponse"]:::resp
 ```
 
 ---
@@ -134,20 +134,20 @@ flowchart LR
     classDef queue fill:#f90,color:#000,stroke:#630,stroke-width:2px;
     classDef worker fill:#6c0,color:#fff,stroke:#030,stroke-width:2px;
     classDef process fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
-    classDef response fill:#555,color:#fff,stroke:#222,stroke-width: 2px;
+    classDef response fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
-    A[Clients 1..N]:::client --> B[accept()]:::dispatcher
+    A["Clients 1..N"]::: client --> B["accept()"]:::dispatcher
     B --> C["Queue FIFO<br/>(mutex + condvars)"]:::queue
 
-    C --> W1[Worker 1]:::worker
-    C --> W2[Worker 2]:::worker
-    C --> WN[Worker N]:::worker
+    C --> W1["Worker 1"]:::worker
+    C --> W2["Worker 2"]:::worker
+    C --> WN["Worker N"]:::worker
 
-    W1 --> T((Traitement)):::process
+    W1 --> T("Traitement"):::process
     W2 --> T
     WN --> T
 
-    T --> R[send()<br/>Réponse]:::response
+    T --> R["send()<br/>Réponse"]::: response
 ```
 
 ---
@@ -287,14 +287,14 @@ flowchart TB
     classDef multi fill:#9f9,color:#000,stroke:#060,stroke-width:2px;
     classDef arrow fill:#fff,color:#000,stroke:#ccc;
 
-    A[Mono-thread]::: mono --> B[1 seul thread<br/>Séquentiel]
-    A --> C[accept() bloquant]
-    A --> D[Latence cumulée]
+    A["Mono-thread"]:::mono --> B["1 seul thread<br/>Séquentiel"]
+    A --> C["accept() bloquant"]
+    A --> D["Latence cumulée"]
 
-    E[Multi-thread]:::multi --> F[Pool de Workers]
-    E --> G[Queue FIFO]
-    E --> H[Parallélisme réel]
-    E --> I[Throughput élevé]
+    E["Multi-thread"]:::multi --> F["Pool de Workers"]
+    E --> G["Queue FIFO"]
+    E --> H["Parallélisme réel"]
+    E --> I["Throughput élevé"]
 
     B -.->|évolution| E
 ```
