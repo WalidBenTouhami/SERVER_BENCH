@@ -136,7 +136,7 @@ flowchart LR
     classDef process fill:#c0c,color:#fff,stroke:#505,stroke-width:2px;
     classDef response fill:#555,color:#fff,stroke:#222,stroke-width:2px;
 
-    A["Clients 1..N"]::: client --> B["accept()"]:::dispatcher
+    A["Clients 1..N"]:::client --> B["accept()"]:::dispatcher
     B --> C["Queue FIFO<br/>(mutex + condvars)"]:::queue
 
     C --> W1["Worker 1"]:::worker
@@ -147,7 +147,7 @@ flowchart LR
     W2 --> T
     WN --> T
 
-    T --> R["send()<br/>Réponse"]::: response
+    T --> R["send()<br/>Réponse"]:::response
 ```
 
 ---
