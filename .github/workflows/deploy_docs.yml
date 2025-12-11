@@ -40,7 +40,6 @@ jobs:
           echo "::warning::GitHub Pages is not enabled for this repository."
           echo "::warning::To enable Pages: Go to Settings > Pages > Source > Select 'GitHub Actions'"
           echo "::warning::Skipping deployment."
-          exit 0
 
       - name: Prepare docs
         if: steps.pages.outcome == 'success'
