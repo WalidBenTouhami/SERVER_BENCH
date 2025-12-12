@@ -13,7 +13,7 @@ jobs:
   analyze:
     strategy:
       matrix:
-        language: [ 'cpp' ]
+        language: ['cpp']
     steps:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -24,7 +24,7 @@ jobs:
 ### Category Parameter
 
 The `category` parameter is critical for configuration matching between branches. It must:
-- Use consistent spacing around template variables: `${{ matrix.language }}`
+- Use consistent YAML formatting for the template variable: `${{ matrix.language }}`
 - Follow the format: `/language:${{ matrix.language }}`
 - Match exactly between main and PR branches
 
@@ -67,7 +67,7 @@ The full identifier becomes: `.github/workflows/codeql.yml:analyze/language:cpp`
 
 ## Best Practices
 
-1. **Consistent Formatting**: Always use spaces around template variables
+1. **Consistent Formatting**: Maintain consistent YAML formatting for template variables
 2. **No Modifications**: Keep the category format consistent across all branches
 3. **Test Changes**: Ensure workflow completes successfully before merging
 
