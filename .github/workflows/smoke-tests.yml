@@ -1,0 +1,49 @@
+name: Smoke Tests (TCP & HTTP)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  smoke-tests:
+    name: Build + Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update -qq
+          sudo apt install -y build-essential python3 python3-pip netcat-openbsd curl lsof jq
+
+      - name: Build servers
+        run: |
+          make clean
+          make -j$(nproc)
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install psutil
+
+      - name: Run smoke tests (TCP & HTTP)
+        run: |
+          chmod +x scripts/smoke_tests.sh
+          ./scripts/smoke_tests.sh
+
+      - name: Verify no server left running
+        run: |
+          echo "Vérification finale : aucun serveur ne doit écouter sur les ports..."
+          for port in 5050 5051 8080 8081; do
+            if lsof -i :$port -t >/dev/null 2>&1; then
+              echo "ERREUR : port $port encore utilisé !"
+              lsof -i :$port
+              exit 1
+            fi
+          done
+          echo "Tous les ports sont libérés"
