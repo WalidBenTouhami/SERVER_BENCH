@@ -83,7 +83,7 @@ def save_figure(name: str) -> None:
     plt.tight_layout()
     
     # Save PNG with optimized DPI
-    plt.savefig(png_path, dpi=150, bbox_inches='tight', optimize=True)
+    plt.savefig(png_path, dpi=150, bbox_inches='tight')
     
     # Save SVG for vector graphics
     plt.savefig(svg_path, bbox_inches='tight')

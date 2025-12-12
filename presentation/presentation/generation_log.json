@@ -4,3 +4,15 @@
 {"timestamp": 1765407232.459129, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
 {"timestamp": 1765407232.4592814, "event": "html_slides", "status": "start", "detail": "G\u00e9n\u00e9ration Reveal.js HTML"}
 {"timestamp": 1765407232.4595046, "event": "html_slides", "status": "ok", "detail": "Slides HTML g\u00e9n\u00e9r\u00e9es : /home/xpert/server_project/presentation/presentation/presentation_finale.html"}
+{"timestamp": 1765546298.4831002, "event": "check", "status": "start", "detail": "V\u00e9rification d\u00e9pendances"}
+{"timestamp": 1765546298.484975, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
+{"timestamp": 1765546298.4851255, "event": "pptx_pdf", "status": "attempt", "detail": "Tentative 1/3"}
+{"timestamp": 1765546299.9001365, "event": "pptx_pdf", "status": "ok", "detail": "PDF g\u00e9n\u00e9r\u00e9 : /home/xpert/server_bench/presentation/presentation/presentation_finale_serveur.pdf"}
+{"timestamp": 1765546443.0024066, "event": "check", "status": "start", "detail": "V\u00e9rification d\u00e9pendances"}
+{"timestamp": 1765546443.003302, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
+{"timestamp": 1765546443.003451, "event": "pptx_pdf", "status": "attempt", "detail": "Tentative 1/3"}
+{"timestamp": 1765546444.3347344, "event": "pptx_pdf", "status": "ok", "detail": "PDF g\u00e9n\u00e9r\u00e9 : /home/xpert/server_bench/presentation/presentation/presentation_finale_serveur.pdf"}
+{"timestamp": 1765546523.6946373, "event": "check", "status": "start", "detail": "V\u00e9rification d\u00e9pendances"}
+{"timestamp": 1765546523.6954262, "event": "dependencies", "status": "info", "detail": "{\n    \"LibreOffice\": \"/usr/bin/libreoffice\",\n    \"reportlab\": true,\n    \"gTTS\": false\n}"}
+{"timestamp": 1765546523.6955721, "event": "pptx_pdf", "status": "attempt", "detail": "Tentative 1/3"}
+{"timestamp": 1765546525.0453897, "event": "pptx_pdf", "status": "ok", "detail": "PDF g\u00e9n\u00e9r\u00e9 : /home/xpert/server_bench/presentation/presentation/presentation_finale_serveur.pdf"}

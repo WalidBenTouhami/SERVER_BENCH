@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include <signal.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -89,9 +88,6 @@ static void route_request(int client_fd,
 }
 
 int main(void) {
-    /* Ignore SIGPIPE globally to handle broken connections */
-    signal(SIGPIPE, SIG_IGN);
-    
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
         perror("socket");
