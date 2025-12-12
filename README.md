@@ -32,6 +32,13 @@
 **Documentation en ligne** → [https://walidbentouhami.github.io/SERVER_BENCH/](https://walidbentouhami.github.io/SERVER_BENCH/)  
 *(Dashboard interactif avec résultats, graphiques et comparaison mono/multi)*
 
+**Thread-Safe Proven**
+![Thread-Safe Proven](https://img.shields.io/badge/Thread--Safe-Proven_%F0%9F%94%92-green?style=for-the-badge&logo=linux)
+![Zero Memory Leaks](https://img.shields.io/badge/Memory-Leaks-0_%E2%9C%85-brightgreen?style=for-the-badge&logo=c)
+![Helgrind Clean](https://img.shields.io/badge/Helgrind-0_errors-%F0%9F%94%92-blue?style=for-the-badge)
+![Live Demo](https://img.shields.io/badge/Live_Demo-Online-%2300BFFF?style=for-the-badge&logo=github)
+
+
 ---
 
 ## 📚 Table des matières
