@@ -229,7 +229,7 @@ curl -v http://127.0.0.1:8080/stats
 ```bash
 ./bin/serveur_multi_http
 ```
-# Et tester avec curl ou ton client de benchmark Python
+# Et tester avec curl ou ton client de benchmark Python Dans un autre terminal :
 ```bash
 curl -v http://127.0.0.1:8081/hello
 curl -v http://127.0.0.1:8081/stats
@@ -247,6 +247,10 @@ valgrind --tool=helgrind ./bin/serveur_multi    # Thread safety check
 ./scripts/run_all.sh          # Démarrage automatique des 4 serveurs
 ./scripts/start_all.sh        # Démarrage automatique des 4 serveurs et benchmark
 ./scripts/run_interactive.sh  # Exécution intéractive
+```
+## ⚙ Arrêt propre des serveurs
+```bash
+make kill_servers
 ```
 ---
 
