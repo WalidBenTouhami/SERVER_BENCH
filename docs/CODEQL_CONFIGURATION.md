@@ -6,20 +6,16 @@ This document explains the CodeQL workflow configuration for the server_bench pr
 
 ## Configuration Format
 
-The CodeQL workflow is configured in `.github/workflows/codeql.yml` with the following key settings:
+The CodeQL workflow is configured in `.github/workflows/codeql.yml`. The key configuration element for ensuring proper configuration matching is the `category` parameter:
 
 ```yaml
-jobs:
-  analyze:
-    strategy:
-      matrix:
-        language: ['cpp']
-    steps:
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
+- name: Perform CodeQL Analysis
+  uses: github/codeql-action/analyze@v3
+  with:
+    category: "/language:${{ matrix.language }}"
 ```
+
+For the complete workflow configuration, refer to `.github/workflows/codeql.yml` in the repository.
 
 ### Category Parameter
 
@@ -57,13 +53,9 @@ The full identifier becomes: `.github/workflows/codeql.yml:analyze/language:cpp`
 
 **Symptom**: Workflow shows 0 jobs with "action_required" status.
 
-**Causes**:
-1. Workflow requires manual approval (common for bot-created PRs)
-2. No code changes to trigger analysis
+**Cause**: Workflow requires manual approval (common for bot-created PRs or first-time contributors)
 
-**Resolution**:
-1. Request repository administrator to approve the workflow
-2. Make a code change to trigger re-execution
+**Resolution**: Request repository administrator to approve the workflow run
 
 ## Best Practices
 
