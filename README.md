@@ -14,7 +14,7 @@
 
 ---
 
-## 🔧 Badges GitHub Actions (CI/CD)
+## 🔧 Badges GitHub Actions (CI/CD):
 
 | Workflow        | Status |
 |-----------------|--------|
@@ -30,7 +30,7 @@
 [![Helgrind Clean](https://img.shields.io/badge/Helgrind-0_errors-blue?style=flat-square)](https://github.com/WalidBenTouhami/SERVER_BENCH)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Online-00BFFF?style=flat-square&logo=githubpages)](https://walidbentouhami.github.io/SERVER_BENCH/)
 
-### 📊 Résultats en Temps Réel
+### 📊 Résultats en Temps Réel:
 🔥 **Throughput actuel :**  
 <img src="https://raw.githubusercontent.com/WalidBenTouhami/SERVER_BENCH/main/python/figures/1-throughput.png" width="600"/>  
 *(Graphique statique ; généré via benchmarks Python – voir figures/ pour live updates)*
@@ -39,7 +39,7 @@
 *(Dashboard interactif avec résultats, graphiques et comparaison mono/multi)*
 ---
 
-## 📚 Table des matières
+## 📚 Table des matières:
 
 * [🎥 GIF Démonstrations](#gif-démonstrations)
 * [📦 Projet — Version FR/EN](#projet-version-fren)
@@ -57,23 +57,23 @@
 
 ---
 
-## 🎥 GIF Démonstrations
+## 🎥 GIF Démonstrations:
 
-### Serveur TCP Multi-thread
+### Serveur TCP Multi-thread:
 
 <!-- ![server-multi](docs/gif/server_multi.gif) -->
 _GIF demonstration will be added soon._
 
-### Stress Test & Benchmarks
+### Stress Test & Benchmarks:
 
 <!-- ![bench](docs/gif/benchmark.gif) -->
 _GIF demonstration will be added soon._
 
 ---
 
-## 📦 Projet — Version FR/EN
+## 📦 Projet — Version FR/EN:
 
-## 🇫🇷 Version Française
+## 🇫🇷 Version Française:
 
 Ce projet implémente **4 serveurs haute performance** :
 
@@ -104,7 +104,7 @@ Fonctionnalités incluses :
 
 ---
 
-## 🇬🇧 English Summary
+## 🇬🇧 English Summary:
 
 This project provides **4 high-performance network servers** using POSIX sockets:
 
@@ -120,9 +120,9 @@ This project provides **4 high-performance network servers** using POSIX sockets
 
 ---
 
-## 🧠 Mermaid Diagrams
+## 🧠 Mermaid Diagrams:
 
-### Architecture Globale
+### Architecture Globale:
 
 ```mermaid
 flowchart LR
@@ -137,7 +137,7 @@ flowchart LR
     G --> H["send()"]
 ```
 
-### Queue FIFO
+### Queue FIFO:
 
 ```mermaid
 classDiagram
@@ -155,7 +155,7 @@ classDiagram
     queue_t --> queue_node_t
 ```
 
-### Dispatcher & Workers
+### Dispatcher & Workers:
 
 ```mermaid
 sequenceDiagram
@@ -167,27 +167,27 @@ sequenceDiagram
 
 ---
 
-## 📊 Benchmarks
+## 📊 Benchmarks:
 
-### Throughput
+### Throughput:
 
 ![tput](python/figures/1-throughput.png)
 
-### Latence P99
+### Latence P99:
 
 ![latency](python/figures/2-latency_p99.png)
 
-### CPU
+### CPU:
 
 ![cpu](python/figures/3-cpu.png)
 
-### Memory
+### Memory:
 
 ![mem](python/figures/4-memory.png)
 
 ---
 
-## 🛠 Installation
+## 🛠 Installation:
 
 ```bash
 sudo apt install build-essential python3 python3-venv python3-pip
@@ -204,7 +204,7 @@ make -j$(nproc)
 
 ---
 
-## ⚙ Exécution
+## ⚙ Exécution:
 
 ```bash
 make run_mono
@@ -213,71 +213,115 @@ make run_mono_http
 make run_multi_http
 ```
 
-## Lancer le mono-thread http :
+## (smoke tests):
+
+## Lancer le mono-thread http:
 ```bash
 ./bin/serveur_mono_http
 ```
 
-# Dans un autre terminal :
+# Tests de bon fonctionnement mono-thread http Dans un autre terminal:
 ```bash
 curl -v http://127.0.0.1:8080/
 curl -v http://127.0.0.1:8080/hello
 curl -v http://127.0.0.1:8080/time
 curl -v http://127.0.0.1:8080/stats
 ```
-## Lancer le multi-thread :
+
+## Lancer le multi-thread http:
 ```bash
 ./bin/serveur_multi_http
 ```
-# Et tester avec curl ou ton client de benchmark Python Dans un autre terminal :
+
+# Tests de bon fonctionnement multi-thread http (smoke tests) Dans un autre terminal:
 ```bash
 curl -v http://127.0.0.1:8081/hello
 curl -v http://127.0.0.1:8081/stats
 ```
----
-## 🧪 Tests & Validation
+
+## Lancer le mono-thread tcp:
+```bash
+./bin/serveur_mono
+```
+
+# Tests de bon fonctionnement mono-thread tcp Dans un autre terminal:
+```bash
+ss -ltnp | grep 5050
+python3 python/client_stress_tcp.py --port 5050 --clients 1
+```
+
+## Lancer le multi-thread tcp:
+```bash
+./bin/serveur_multi
+```
+
+# Tests de bon fonctionnement multi-thread http (smoke tests) Dans un autre terminal:
+```bash
+ss -ltnp | grep 5051
+python3 python/client_stress_tcp.py --port 5051 --clients 1
+```
+
+## 🧪 Stress tests HTTP:
+```bash
+python client_stress_http.py --port 8080
+python client_stress_http.py --port 8081
+```
+
+## 🧪 Stress tests TCP:
+```bash
+python client_stress_tcp.py --port 5050
+python client_stress_tcp.py --port 5051
+```
+
+## 🧪 Tests & Validation:
 ```bash
 make test                                        # Run unit tests
 make MODE=debug all                              # Build with sanitizers
 valgrind --leak-check=full ./bin/serveur_multi  # Memory leak check
 valgrind --tool=helgrind ./bin/serveur_multi    # Thread safety check
 ```
-## ⚙ Exécution Automatique
+
+## 🧪 Benchmarks globaux:
+```bash
+python benchmark_extreme.py
+```
+
+## ⚙ Exécution Automatique:
 ```bash
 ./scripts/run_all.sh          # Démarrage automatique des 4 serveurs
 ./scripts/start_all.sh        # Démarrage automatique des 4 serveurs et benchmark
 ./scripts/run_interactive.sh  # Exécution intéractive
 ```
-## ⚙ Arrêt propre des serveurs
+
+## ⚙ Arrêt propre des serveurs:
 ```bash
 make kill_servers
 ```
----
 
-## 🚀 Optimisations Appliquées
+## 🚀 Optimisations Appliquées:
 
 Le projet utilise des optimisations avancées pour des performances maximales :
 
-### Compilation
+### Compilation:
 - `-O3 -march=native` : Optimisations agressives pour l'architecture cible
 - `-flto` : Link-Time Optimization pour optimisations inter-modules
 - `-ffast-math` : Optimisations mathématiques rapides
 - `-funroll-loops` : Déroulement de boucles pour réduire les branchements
 - `-DNDEBUG` : Désactive les assertions pour réduire le overhead
 
-### Sécurité et Robustesse
+### Sécurité et Robustesse:
 - Signal handling : `SIGPIPE` ignoré pour gérer les connexions fermées
 - `MSG_NOSIGNAL` : Évite les crashes sur envoi vers socket fermé
 - Mutex avec `PTHREAD_MUTEX_ERRORCHECK` : Détection d'erreurs de verrouillage
 - Format security : `-Wformat=2 -Wformat-security` pour prévenir les vulnérabilités
 
-### Linker
+### Linker:
 - `-Wl,-O1` : Optimisations au niveau du linker
 - `-Wl,--as-needed` : Réduit les dépendances inutiles
 
 ---
 
-## 📡 API HTTP
+## 📡 API HTTP:
 
 | Route    | Description  |
 | -------- | ------------ |
@@ -298,7 +342,7 @@ Example:
 
 ---
 
-## 📂 Architecture du projet
+## 📂 Architecture du projet:
 
 ```
 src/
@@ -312,9 +356,9 @@ src/
 
 ---
 
-## 🚀 Pipeline DevOps complet
+## 🚀 Pipeline DevOps complet:
 
-### Exécution globale
+### Exécution globale:
 
 ```bash
 ./scripts/run_interactive.sh
@@ -344,7 +388,7 @@ Il exécute automatiquement :
 
 ---
 
-## 👤 Auteurs
+## 👤 Auteurs:
 
 | Auteur                 | Rôle                                | Expertise                |
 | ---------------------- | ----------------------------------- | ------------------------ |
@@ -355,7 +399,7 @@ Il exécute automatiquement :
 
 ---
 
-## 📜 Licence
+## 📜 Licence:
 
 ```
 MIT License — Academic Use Only
