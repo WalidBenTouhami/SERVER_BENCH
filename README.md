@@ -203,25 +203,28 @@ make run_multi_http
 ```
 
 ## Lancer le mono-thread http :
+```bash
 ./bin/serveur_mono_http
+```
+
 # Dans un autre terminal :
+```bash
 curl -v http://127.0.0.1:8080/
 curl -v http://127.0.0.1:8080/hello
 curl -v http://127.0.0.1:8080/time
 curl -v http://127.0.0.1:8080/stats
-
+```
 ## Lancer le multi-thread :
+```bash
 ./bin/serveur_multi_http
+```
 # Et tester avec curl ou ton client de benchmark Python
+```bash
 curl -v http://127.0.0.1:8081/hello
 curl -v http://127.0.0.1:8081/stats
-
-
-
+```
 ---
-
 ## 🧪 Tests & Validation
-
 ```bash
 make test                                        # Run unit tests
 make MODE=debug all                              # Build with sanitizers
@@ -229,7 +232,6 @@ valgrind --leak-check=full ./bin/serveur_multi  # Memory leak check
 valgrind --tool=helgrind ./bin/serveur_multi    # Thread safety check
 ```
 ## ⚙ Exécution Automatique
-
 ```bash
 ./scripts/run_all.sh          # Démarrage automatique des 4 serveurs
 ./scripts/start_all.sh        # Démarrage automatique des 4 serveurs et benchmark
