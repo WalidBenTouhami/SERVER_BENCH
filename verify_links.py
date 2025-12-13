@@ -28,6 +28,15 @@ FRENCH_ACCENTS = 'àâäéèêëïîôùûüÿæœçÀÂÄÉÈÊËÏÎÔÙÛÜŸ
 # Characters to strip from URLs
 URL_CLEANUP_CHARS = '.,;:)`|'
 
+# Maximum file size to process (skip larger files for performance)
+MAX_FILE_SIZE = 1_000_000  # 1 MB
+
+# Rate limiting delay between requests (seconds)
+RATE_LIMIT_DELAY = 0.2
+
+# Directories to exclude from scanning
+EXCLUDED_DIRS = {'.git', 'node_modules', 'venv', '__pycache__', '.github'}
+
 class LinkVerifier:
     def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
@@ -71,9 +80,9 @@ class LinkVerifier:
         }
         
         try:
-            # Skip very large files (> 1MB) to avoid performance issues
+            # Skip very large files to avoid performance issues
             file_size = filepath.stat().st_size
-            if file_size > 1_000_000:
+            if file_size > MAX_FILE_SIZE:
                 self.log_warning(f"Skipping large file ({file_size/1_000_000:.1f}MB): {filepath.name}")
                 return {k: list(v) for k, v in links.items()}
             
@@ -222,8 +231,7 @@ class LinkVerifier:
         all_files = md_files + html_files
         
         # Exclude certain directories
-        excluded_dirs = {'.git', 'node_modules', 'venv', '__pycache__', '.github'}
-        all_files = [f for f in all_files if not any(ex in str(f) for ex in excluded_dirs)]
+        all_files = [f for f in all_files if not any(ex in str(f) for ex in EXCLUDED_DIRS)]
         
         self.log_info(f"Found {len(all_files)} files to check")
         sys.stdout.flush()
@@ -268,7 +276,7 @@ class LinkVerifier:
                 continue
                 
             # Add small delay to avoid rate limiting
-            time.sleep(0.2)
+            time.sleep(RATE_LIMIT_DELAY)
             
             success, message = self.verify_external_url(url)
             
@@ -364,7 +372,7 @@ class LinkVerifier:
 
 def main():
     """Main entry point"""
-    repo_path = os.path.dirname(os.path.abspath(__file__))
+    repo_path = Path(__file__).parent
     
     verifier = LinkVerifier(repo_path)
     verifier.verify_all_links()
