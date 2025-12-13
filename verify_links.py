@@ -22,7 +22,8 @@ BLUE = '\033[0;34m'
 NC = '\033[0m'  # No Color
 
 # French accents preserved in GitHub anchor generation
-FRENCH_ACCENTS = 'àâäéèêëïîôùûüÿæœç'
+# Includes both lowercase and uppercase variants for completeness
+FRENCH_ACCENTS = 'àâäéèêëïîôùûüÿæœçÀÂÄÉÈÊËÏÎÔÙÛÜŸÆŒÇ'
 
 # Characters to strip from URLs
 URL_CLEANUP_CHARS = '.,;:)`|'

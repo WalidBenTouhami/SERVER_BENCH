@@ -20,9 +20,9 @@ A comprehensive link verification was performed on all markdown and HTML files i
 |----------|--------|--------|--------|
 | External Links | 11 | 0* | ✅ |
 | Badge URLs | 15 | 0 | ✅ |
-| Internal Anchors | 24 | 0 | ✅ |
+| Internal Anchors | 26 | 0 | ✅ |
 | Local URLs | 8 | 0** | ⚠️ |
-| **TOTAL** | **58** | **0** | ✅ |
+| **TOTAL** | **60** | **0** | ✅ |
 
 \* 2 demo URLs intentionally not functional (see below)  
 \** Local URLs require running servers to test
@@ -39,9 +39,9 @@ All production external links are functional:
 - ✅ GitHub issues: `https://github.com/WalidBenTouhami/server_bench/issues`
 - ✅ GitHub Pages: `https://walidbentouhami.github.io/server_bench/`
 - ✅ CodeQL Action: `https://github.com/github/codeql-action`
-- ✅ GitHub Docs: `https://docs.github.com/...`
-- ✅ CDN resources: `https://cdnjs.cloudflare.com/...` (4 resources)
-- ✅ Raw GitHub content: `https://raw.githubusercontent.com/...`
+- ✅ GitHub Docs (2): Main page and code security documentation
+- ✅ CDN resources (5): Reveal.js CSS/JS files
+- ✅ Raw GitHub content (2): Main page and throughput image
 
 ### 2. Badge URLs (15 verified ✅)
 
@@ -52,7 +52,7 @@ All shields.io badge URLs are functional and returning valid SVG images:
 - ✅ Live Demo badge (1)
 - ✅ GitHub Actions workflow badges (6): Build, Cppcheck, CodeQL, Benchmarks, Deploy Docs, Smoke Tests
 
-### 3. Internal Anchor Links (24 verified ✅)
+### 3. Internal Anchor Links (26 verified ✅)
 
 All table of contents anchor links in README.md are functional and correctly formatted:
 
@@ -77,11 +77,12 @@ All table of contents anchor links in README.md are functional and correctly for
 - ✅ #auteurs
 - ✅ #licence
 
-#### Subsections (4 links)
+#### Subsections (6 links)
 - ✅ #smoke-tests
 - ✅ #stress-tests
 - ✅ #validation-tests
 - ✅ #benchmarks-standards
+- ✅ #benchmarks-extrêmes
 - ✅ #kpi-de-performance
 
 **Note:** All anchors correctly preserve French accents (é, è, ê, à, etc.) as per GitHub's anchor generation rules.
