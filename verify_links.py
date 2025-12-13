@@ -36,8 +36,7 @@ class LinkVerifier:
         self.demo_urls = {
             'https://api.server-bench.io',
             'https://server-bench.io/trial',
-            'https://server-bench.io',
-            'contact@server-bench.io'
+            'https://server-bench.io'
         }
         
     def log_info(self, message: str):
@@ -90,7 +89,8 @@ class LinkVerifier:
                 links['external'].add(url)
                 
             # Extract markdown anchor links from TOC
-            anchor_links = re.findall(r'\[.+?\]\(#([a-z0-9\-é]+)\)', content, re.IGNORECASE)
+            # Include all French accents that are preserved in GitHub anchors
+            anchor_links = re.findall(r'\[.+?\]\(#([a-z0-9\-àâäéèêëïîôùûüÿæœç]+)\)', content, re.IGNORECASE)
             for anchor in anchor_links:
                 links['anchors'].add(anchor)
                 
