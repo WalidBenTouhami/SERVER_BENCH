@@ -640,6 +640,7 @@ kill -9 <PID>
 | Script | Description |
 |--------|-------------|
 | `setup.sh` | Installation complète du projet |
+| `verify_links.py` | Vérification de tous les liens (URLs, badges, anchors) |
 | `scripts/start_all.sh` | Démarrage de tous les serveurs |
 | `scripts/run_all.sh` | Pipeline complet (build + bench + plots) |
 | `scripts/run_interactive.sh` | Menu interactif |

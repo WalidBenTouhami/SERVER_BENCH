@@ -364,7 +364,7 @@ Fichier: /etc/server-bench/agent.yaml
 
 ──────────────────────────────────────────────
 server:
-  url: "https://api.server-bench.io"
+  url: "https://api.server-bench.io"  # Example URL for demonstration purposes
   port: 443
   api_key: "${API_KEY_ENV}"
   certificate: "/etc/server-bench/cert.pem"
@@ -927,6 +927,7 @@ SUCCESS METRICS:
 │ ✅ Cancel anytime, no penalties                    │
 │                                                     │
 │ 👉 Visitez: https://server-bench.io/trial          │
+│    (Example URL for demonstration purposes)        │
 │ 📧 Email: contact@server-bench.io                  │
 │ 💬 Chat support disponible 24/7                    │
 │                                                     │
