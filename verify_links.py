@@ -28,9 +28,17 @@ class LinkVerifier:
             'external_links': {'passed': [], 'failed': []},
             'internal_anchors': {'passed': [], 'failed': []},
             'local_urls': {'passed': [], 'failed': []},
-            'badge_urls': {'passed': [], 'failed': []}
+            'badge_urls': {'passed': [], 'failed': []},
+            'demo_urls': {'passed': [], 'failed': []}
         }
         self.headers_cache = {}
+        # Known demo/placeholder URLs that are intentionally non-functional
+        self.demo_urls = {
+            'https://api.server-bench.io',
+            'https://server-bench.io/trial',
+            'https://server-bench.io',
+            'contact@server-bench.io'
+        }
         
     def log_info(self, message: str):
         """Print info message"""
@@ -72,10 +80,13 @@ class LinkVerifier:
             cleaned_content = re.sub(r'\[([^\]]+)\]\((https?://[^\)]+)\)', r' \2 ', content)
             
             # Now extract all HTTP/HTTPS URLs from cleaned content
-            external_urls = re.findall(r'https?://[^\s\)<>"\']+', cleaned_content)
+            external_urls = re.findall(r'https?://[^\s\)<>"\'`]+', cleaned_content)
             for url in external_urls:
-                # Clean up URL (remove trailing punctuation)
-                url = url.rstrip('.,;:)')
+                # Clean up URL (remove trailing punctuation and backticks)
+                url = url.rstrip('.,;:)`')
+                # Skip URLs that are just placeholders or examples with ellipsis
+                if '...' in url or url.endswith('`'):
+                    continue
                 links['external'].add(url)
                 
             # Extract markdown anchor links from TOC
@@ -244,6 +255,12 @@ class LinkVerifier:
             # Skip local URLs (they'll be checked separately)
             if '127.0.0.1' in url or 'localhost' in url:
                 continue
+            
+            # Check if it's a demo URL
+            if url in self.demo_urls:
+                self.results['demo_urls']['passed'].append((url, "Demo/placeholder URL"))
+                self.log_warning(f"{url} - Demo/placeholder URL (intentional)")
+                continue
                 
             # Add small delay to avoid rate limiting
             time.sleep(0.2)
@@ -302,10 +319,17 @@ class LinkVerifier:
         
         total_passed = 0
         total_failed = 0
+        demo_count = 0
         
         for category, results in self.results.items():
             passed = len(results['passed'])
             failed = len(results['failed'])
+            
+            # Don't count demo URLs as failures
+            if category == 'demo_urls':
+                demo_count = passed
+                continue
+                
             total_passed += passed
             total_failed += failed
             
@@ -315,15 +339,22 @@ class LinkVerifier:
             print(f"  {RED}✗ Failed: {failed}{NC}")
             print()
         
+        if demo_count > 0:
+            print(f"Demo/Placeholder URLs:")
+            print(f"  {YELLOW}⚠ Skipped: {demo_count}{NC} (intentionally non-functional)")
+            print()
+        
         print(f"{'='*80}")
-        print(f"TOTAL: {GREEN}{total_passed} passed{NC}, {RED}{total_failed} failed{NC}")
+        print(f"TOTAL: {GREEN}{total_passed} passed{NC}, {RED}{total_failed} failed{NC}, {YELLOW}{demo_count} demo{NC}")
         print(f"{'='*80}\n")
         
         if total_failed > 0:
             print(f"{RED}Some links failed verification!{NC}")
             return False
         else:
-            print(f"{GREEN}All links verified successfully!{NC}")
+            print(f"{GREEN}All functional links verified successfully!{NC}")
+            if demo_count > 0:
+                print(f"{YELLOW}Note: {demo_count} demo/placeholder URLs were skipped (intentional){NC}")
             return True
 
 def main():
